@@ -2440,12 +2440,12 @@ function Certificates({db,user}){
       </svg>;
 
   const SigBlock = ({img,name,title}) => <div style={{textAlign:"center",minWidth:160}}>
+    <div style={{fontSize:12,fontWeight:900,fontFamily:"'Playfair Display',serif",color:"#1a1a1a",marginBottom:4}}>{name}</div>
     <div style={{height:55,display:"flex",alignItems:"flex-end",justifyContent:"center",marginBottom:4}}>
       {img
         ?<img src={img} style={{maxHeight:52,maxWidth:150,objectFit:"contain"}}/>
         :<div style={{borderBottom:"2px solid #333",width:150}}/>}
     </div>
-    <div style={{fontSize:12,fontWeight:900,fontFamily:"'Playfair Display',serif",color:"#1a1a1a"}}>{name}</div>
     <div style={{fontSize:10,color:"#555",fontStyle:"italic"}}>{title}</div>
   </div>;
 
