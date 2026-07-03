@@ -4506,6 +4506,65 @@ function LiveClass({db,user}){
 }
 
 // ── V4.0: DASHBOARD YA KISASA ─────────────────────────
+function TeacherClockIn({db,user}){
+  const [staffRec,setStaffRec]=useState(null);
+  const [todayAtt,setTodayAtt]=useState(null);
+  const [loading,setLoading]=useState(true);
+  const [busy,setBusy]=useState(false);
+  const today=fmtDate();
+
+  useEffect(()=>{(async()=>{
+    if(!user?.email){setLoading(false);return;}
+    const {data:st}=await db.from("staff").select("*").eq("email",user.email).limit(1);
+    const rec=st&&st[0]?st[0]:null;
+    setStaffRec(rec);
+    if(rec){
+      const {data:att}=await db.from("staff_attendance").select("*").eq("staff_id",rec.id).eq("att_date",today).limit(1);
+      setTodayAtt(att&&att[0]?att[0]:null);
+    }
+    setLoading(false);
+  })();},[]);
+
+  const clockIn=async()=>{
+    if(!staffRec)return;
+    setBusy(true);
+    const t=new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+    const rec={staff_id:staffRec.id,att_date:today,status:"P",check_in:t};
+    await db.from("staff_attendance").upsert(rec,{onConflict:"staff_id,att_date"});
+    setTodayAtt({...todayAtt,...rec});
+    setBusy(false);
+  };
+
+  const clockOut=async()=>{
+    if(!staffRec)return;
+    setBusy(true);
+    const t=new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+    await db.from("staff_attendance").update({check_out:t}).eq("staff_id",staffRec.id).eq("att_date",today);
+    setTodayAtt({...todayAtt,check_out:t});
+    setBusy(false);
+  };
+
+  if(loading||!staffRec)return null;
+
+  return<div className="card" style={{marginBottom:16,background:"linear-gradient(135deg,#fff7ed,#fff)",border:"1px solid #fed7aa"}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
+      <div>
+        <div style={{fontWeight:800,fontSize:15}}>🕘 Mahudhurio Yako Leo</div>
+        <div style={{fontSize:12,color:C.textSoft,marginTop:2}}>
+          {todayAtt?.check_in
+            ? <>Umefika saa: <b style={{color:C.green}}>{todayAtt.check_in}</b>{todayAtt?.check_out?<> • Umeondoka: <b style={{color:C.red}}>{todayAtt.check_out}</b></>:""}</>
+            : "Bado hujaweka mahudhurio ya leo"}
+        </div>
+      </div>
+      <div style={{display:"flex",gap:8}}>
+        {!todayAtt?.check_in && <button className="btn" disabled={busy} style={{background:C.green}} onClick={clockIn}>✅ Nimefika</button>}
+        {todayAtt?.check_in && !todayAtt?.check_out && <button className="btn" disabled={busy} style={{background:"#f97316"}} onClick={clockOut}>🚪 Naondoka</button>}
+        {todayAtt?.check_in && todayAtt?.check_out && <span style={{fontSize:13,color:C.green,fontWeight:700}}>✔️ Umekamilisha siku</span>}
+      </div>
+    </div>
+  </div>;
+}
+
 function Dashboard({db,user,setPage}){
   const [stats,setStats]=useState({students:0,staff:0,fees:0,paid:0,pending:0,present:0,absent:0,debtors:0});
   const [monthlyData,setMonthlyData]=useState([]);
@@ -4584,6 +4643,9 @@ function Dashboard({db,user,setPage}){
         </div>
       </div>
     </div>
+
+    {/* Teacher Clock-In */}
+    {role==="teacher" && <TeacherClockIn db={db} user={user}/>}
 
     {/* Live School Activity */}
     <div style={{marginBottom:16}}><LiveClassActivity db={db}/></div>
