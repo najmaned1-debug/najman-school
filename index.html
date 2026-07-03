@@ -2418,9 +2418,9 @@ function Certificates({db,user}){
 
   const bodyText = (s,t) => {
     const age = calcAge(s.dob);
-    if(t==="completion") return `This is to certify that <strong>${s.name}</strong>${age?`, aged ${age} years,`:""} has successfully completed the <strong>${s.class_name}</strong> programme at Najman Education Centre for the academic year <strong>${year}</strong>.`;
+    if(t==="completion") return `This is to certify that <strong>${s.name}</strong>${age?`, aged ${age} years,`:""} has successfully completed the <strong>${s.class_name}</strong> programme at Najman Pre Primary School & Daycare for the academic year <strong>${year}</strong>.`;
     if(t==="excellence") return `This is to certify that <strong>${s.name}</strong> has demonstrated outstanding academic excellence and exemplary conduct during the <strong>${s.class_name}</strong> programme for the academic year <strong>${year}</strong>.`;
-    if(t==="admission") return `This is to certify that <strong>${s.name}</strong>${s.dob?`, born on <strong>${s.dob}</strong>,`:""} was duly admitted to <strong>${s.class_name}</strong> at Najman Education Centre${s.admission_date?` on <strong>${s.admission_date}</strong>`:""}.${s.parent?` Parent/Guardian: <strong>${s.parent}</strong>.`:""}`;
+    if(t==="admission") return `This is to certify that <strong>${s.name}</strong>${s.dob?`, born on <strong>${s.dob}</strong>,`:""} was duly admitted to <strong>${s.class_name}</strong> at Najman Pre Primary School & Daycare${s.admission_date?` on <strong>${s.admission_date}</strong>`:""}.${s.parent?` Parent/Guardian: <strong>${s.parent}</strong>.`:""}`;
     if(t==="merit") return `This is to certify that <strong>${s.name}</strong> has shown remarkable merit, dedication, and hard work throughout the <strong>${s.class_name}</strong> programme during the academic year <strong>${year}</strong>.`;
     if(t==="participation") return `This is to certify that <strong>${s.name}</strong> has actively and enthusiastically participated in all academic and co-curricular activities during the <strong>${s.class_name}</strong> programme for the academic year <strong>${year}</strong>.`;
     return "";
@@ -2434,7 +2434,7 @@ function Certificates({db,user}){
           <rect x="13" y="15" width="254" height="120" rx="2" fill="none" stroke="#1a56db" strokeWidth="1.2"/>
           <text x="140" y="52" textAnchor="middle" fontSize="28" fontWeight="700" fontFamily="'Caveat',cursive" fill="#1a56db" letterSpacing="2">PRINCIPAL</text>
           <line x1="18" y1="62" x2="262" y2="62" stroke="#1a56db" strokeWidth="1.5"/>
-          <text x="140" y="88" textAnchor="middle" fontSize="21" fontWeight="700" fontFamily="'Caveat',cursive" fill="#1a56db">NAJMAN EDUCATION CENTRE</text>
+          <text x="140" y="88" textAnchor="middle" fontSize="21" fontWeight="700" fontFamily="'Caveat',cursive" fill="#1a56db">NAJMAN PRE PRIMARY SCHOOL</text>
           <text x="140" y="112" textAnchor="middle" fontSize="16" fontFamily="'Caveat',cursive" fill="#1a56db">P.O. BOX 1333 - MWANZA</text>
         </g>
       </svg>;
@@ -2533,7 +2533,7 @@ function Certificates({db,user}){
             <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:14,marginBottom:4}}>
               <img src={SCHOOL_LOGO} style={{width:60,height:60,objectFit:"contain"}}/>
               <div style={{textAlign:"left"}}>
-                <div style={{fontSize:14,letterSpacing:2,color:cert.color,textTransform:"uppercase",fontWeight:900,fontFamily:"'Playfair Display',serif"}}>Najman Education Centre</div>
+                <div style={{fontSize:14,letterSpacing:2,color:cert.color,textTransform:"uppercase",fontWeight:900,fontFamily:"'Playfair Display',serif"}}>Najman Pre Primary School & Daycare</div>
                 <div style={{fontSize:9,color:"#888",letterSpacing:1,marginTop:2}}>Kishili, Mwanza, Tanzania • Tel: +255 742 415 133</div>
                 <div style={{fontSize:9,color:"#888",marginTop:1}}>Motto: "Play Your Part" • P.O. Box 1333</div>
               </div>
@@ -2570,7 +2570,7 @@ function Certificates({db,user}){
 
           {/* Bottom strip */}
           <div style={{textAlign:"center",marginTop:10,fontSize:8,color:"#bbb",letterSpacing:3,borderTop:"1px solid #e0d9c0",paddingTop:6}}>
-            NAJMAN EDUCATION CENTRE • NAJMAN PRE PRIMARY SCHOOL & DAYCARE • KISHILI, MWANZA
+            NAJMAN PRE PRIMARY SCHOOL & DAYCARE • KISHILI, MWANZA
           </div>
         </div>
       </div>
