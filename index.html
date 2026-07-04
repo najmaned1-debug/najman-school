@@ -743,7 +743,7 @@ function TeacherFeeCollect({db,user}){
           <option>Term Fee</option><option>Admission Fee</option><option>Uniform</option><option>Transport</option><option>Meals</option><option>Other</option>
         </select>
       </div>
-      <div className="mb-12"><label className="label">Njia ya Malipo</label>
+      <div className="mb-12"><label className="label">Payment Method</label>
         <select className="input" value={method} onChange={e=>setMethod(e.target.value)}>
           <option>Cash</option><option>M-Pesa</option><option>Tigo Pesa</option><option>Airtel Money</option><option>Bank</option>
         </select>
@@ -982,7 +982,7 @@ function Students({db,user}) {
     else {
       const {data:newSt,error:stErr} = await db.from("students").insert(d).select().single();
       if(stErr){ alert("Error saving student: "+stErr.message); return; }
-      // ── AUTO: SMS kwa mzazi ──────────────────────────
+      // ── AUTO: SMS to parent ──────────────────────────
       if(newSt){
 
         if(form.phone){
@@ -1033,7 +1033,7 @@ function Students({db,user}) {
       ))}
     </div>
     <div className="card flex gap-8 flex-wrap mb-10" style={{marginBottom:0}}>
-      <input className="input" style={{flex:1,minWidth:140}} placeholder="🔍 Tafuta mstudents..." value={search} onChange={e=>setSearch(e.target.value)}/>
+      <input className="input" style={{flex:1,minWidth:140}} placeholder="🔍 Search student..." value={search} onChange={e=>setSearch(e.target.value)}/>
       <select className="input" style={{width:145}} value={fClass} onChange={e=>setFClass(e.target.value)}>
         <option>All</option>{classes.map(c=><option key={c.id}>{c.name}</option>)}
       </select>
@@ -1075,7 +1075,7 @@ function Students({db,user}) {
         </div>
         {/* Buttons */}
         <div style={{flex:1}}>
-          <div style={{fontWeight:800,fontSize:13,marginBottom:8,color:C.text}}>Picha ya Mstudents</div>
+          <div style={{fontWeight:800,fontSize:13,marginBottom:8,color:C.text}}>Student Photo</div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             {/* Gallery */}
             <label style={{cursor:"pointer"}}>
@@ -1189,7 +1189,7 @@ function GraduatedLeftStudents({db,user}){
     {loading&&<Spinner/>}
     {!loading&&<div className="card">
       <table className="table">
-        <thead><tr>{["#","Name","Class","Admission No","Parent","Phone","Tarehe ya Kujiunga",""].map(h=><th key={h}>{h}</th>)}</tr></thead>
+        <thead><tr>{["#","Name","Class","Admission No","Parent","Phone","Admission Date",""].map(h=><th key={h}>{h}</th>)}</tr></thead>
         <tbody>{filtered.map((s,i)=><tr key={s.id}>
           <td>{i+1}</td>
           <td className="fw-700">{s.name}</td>
@@ -1420,7 +1420,7 @@ function Fees({db,user}) {
           <div style="font-size:12px;font-weight:700;margin-top:5px;">🧾 PAYMENT RECEIPT</div>
           <div style="font-size:10px;color:#888;">No: ${rcptNo}</div>
         </div>
-        <div class="row"><b>Mstudents:</b><span>${st.name}</span></div>
+        <div class="row"><b>Student:</b><span>${st.name}</span></div>
         <div class="row"><b>Class:</b><span>${st.class_name}</span></div>
         <div class="row"><b>Parent:</b><span>${st.parent||"—"}</span></div>
         <div class="row"><b>Fee Type:</b><span>${form.fee_type}</span></div>
@@ -1498,7 +1498,7 @@ function Fees({db,user}) {
       {[["overview","📋 Overview"],["history","🕐 History"],["debtors","⚠️ Debtors"]].map(([id,lbl])=>(
         <button key={id} className={`tab-btn ${tab===id?"active":""}`} onClick={()=>setTab(id)}>{lbl}</button>
       ))}
-      <input className="input" style={{flex:1,minWidth:140,marginLeft:8}} placeholder="🔍 Tafuta mstudents..." value={sq} onChange={e=>setSq(e.target.value)}/>
+      <input className="input" style={{flex:1,minWidth:140,marginLeft:8}} placeholder="🔍 Search student..." value={sq} onChange={e=>setSq(e.target.value)}/>
     </div>
 
     {tab==="overview"&&(loading?<Spinner/>:<div className="card">
@@ -1612,7 +1612,7 @@ function Admissions({db,user}){
     if(editId){ await db.from("admissions").update(form).eq("id",editId); }
     else { await db.from("admissions").insert(form); }
 
-    // ── AUTO: Ukisajili mstudents → tengeneza Student ID na muhtasari
+    // ── AUTO: When a student is registered → generate Student ID and summary
     if(form.status==="Admitted"&&(!editId||wasAdmitted)){
       const yr=new Date().getFullYear();
       // Check if student already exists
@@ -1631,7 +1631,7 @@ function Admissions({db,user}){
           const msg=`Ndugu ${form.parent||form.full_name}, hongera! ${form.full_name} amekubaliwa rasmi katika Najman Education Centre. Number ya Usajili: ${admNo}. Karibu! +255 742 415 133`;
           sendSMS(form.phone,msg).catch(()=>{});
         }
-        alert(`✅ Mstudents ${form.full_name} amesajiliwa!\nNumber ya Usajili: ${admNo}\n${form.phone?"📲 SMS imetumwa kwa mzazi!":""}`)
+        alert(`✅ Student ${form.full_name} registered!\nRegistration Number: ${admNo}\n${form.phone?"📲 SMS sent to parent!":""}`)
       }
     }
     load();setModal(false);setEditId(null);setForm(blank);
@@ -1675,12 +1675,12 @@ function Admissions({db,user}){
     {modal&&<div className="overlay"><div className="modal">
       <div style={{fontWeight:900,fontSize:16,marginBottom:14,fontFamily:"'Playfair Display',serif"}}>{editId?"✏️ Edit Application":"📝 New Application"}</div>
       <Field label="Name Kamili *" value={form.full_name} onChange={v=>setForm(f=>({...f,full_name:v}))}/>
-      <Field label="Name la Parent" value={form.parent} onChange={v=>setForm(f=>({...f,parent:v}))}/>
+      <Field label="Parent Name" value={form.parent} onChange={v=>setForm(f=>({...f,parent:v}))}/>
       <Field label="Phone" value={form.phone} onChange={v=>setForm(f=>({...f,phone:v}))}/>
       <Field label="Class Analoomba" value={form.apply_class} onChange={v=>setForm(f=>({...f,apply_class:v}))}/>
       <Select label="Status" value={form.status} onChange={v=>setForm(f=>({...f,status:v}))} options={["Pending","Admitted","Rejected"]}/>
       <Field label="Date" value={form.app_date} onChange={v=>setForm(f=>({...f,app_date:v}))} type="date"/>
-      {form.status==="Admitted"&&<div style={{padding:10,background:"rgba(22,163,74,.08)",border:"1px solid rgba(22,163,74,.3)",borderRadius:8,fontSize:12,marginBottom:10}}>✅ Admitting will auto-register mstudents moja kwa moja + kutuma SMS kwa mzazi</div>}
+      {form.status==="Admitted"&&<div style={{padding:10,background:"rgba(22,163,74,.08)",border:"1px solid rgba(22,163,74,.3)",borderRadius:8,fontSize:12,marginBottom:10}}>✅ Admitting will auto-register the student immediately + send an SMS to the parent</div>}
       <div className="flex gap-8 justify-between" style={{marginTop:14}}>
         <button className="btn-ghost" onClick={()=>{setModal(false);setEditId(null);}}>Cancel</button>
         <button className="btn" onClick={save}>{editId?"Save":"Submit"}</button>
@@ -1786,7 +1786,7 @@ function Staff({db,user}){
         <div><Select label="Jinsia" value={form.gender} onChange={v=>F("gender",v)} options={["Male","Female"]}/></div>
         <div><Field label="Phone" value={form.phone} onChange={v=>F("phone",v)}/></div>
         <div><Field label="Email" value={form.email} onChange={v=>F("email",v)} type="email"/></div>
-        <div><Field label="Date ya Kuajiriwa" value={form.join_date} onChange={v=>F("join_date",v)} type="date"/></div>
+        <div><Field label="Date Hired" value={form.join_date} onChange={v=>F("join_date",v)} type="date"/></div>
         <div><Field label="Mshahara (TZS)" value={form.salary} onChange={v=>F("salary",v)} type="number"/></div>
         <div><Select label="Status" value={form.status} onChange={v=>F("status",v)} options={["Active","On Leave","Resigned"]}/></div>
         <div className="grid-full"><Field label="Elimu / Sifa" value={form.qualifications} onChange={v=>F("qualifications",v)}/></div>
@@ -1900,7 +1900,7 @@ function LiveClassActivity({db}){
       <div style={{fontSize:11,color:C.muted,fontWeight:700}}>{now.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</div>
     </div>
     {loading&&<div style={{fontSize:13,color:C.muted}}>Inapakia...</div>}
-    {!loading&&isWeekend&&<div style={{fontSize:13,color:C.muted,textAlign:"center",padding:"14px 0"}}>🌤️ Leo ni {today==="Saturday"?"Jumamosi":"Jumapili"} — hakuna masomo</div>}
+    {!loading&&isWeekend&&<div style={{fontSize:13,color:C.muted,textAlign:"center",padding:"14px 0"}}>🌤️ Today is {today==="Saturday"?"Saturday":"Sunday"} — no classes</div>}
     {!loading&&!isWeekend&&classes.length===0&&<div style={{fontSize:13,color:C.muted}}>No classes set up yet</div>}
     {!loading&&!isWeekend&&classes.length>0&&<div style={{display:"flex",flexDirection:"column",gap:6}}>
       {active.map(r=>(
@@ -1918,7 +1918,7 @@ function LiveClassActivity({db}){
         </div>
       ))}
       {idle.length>0&&<div style={{marginTop:active.length>0?4:0}}>
-        {active.length>0&&<div style={{fontSize:11,color:C.muted,fontWeight:700,marginBottom:4}}>Mapumziko / Nje ya masaa ya somo</div>}
+        {active.length>0&&<div style={{fontSize:11,color:C.muted,fontWeight:700,marginBottom:4}}>Break / Outside class hours</div>}
         <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
           {idle.map(r=>(
             <div key={r.cls.id} style={{fontSize:11,color:r.onBreak?C.accent:C.textSoft,padding:"4px 9px",background:r.onBreak?"rgba(245,166,35,.1)":"#f1f5f9",borderRadius:6,fontWeight:700}}>{r.onBreak?"☕ ":""}{r.cls.name}</div>
@@ -2001,7 +2001,7 @@ function LessonLog({db,user}){
 
   return <div>
     <div style={{fontSize:19,fontWeight:900,fontFamily:"'Playfair Display',serif",marginBottom:4}}>📔 Lesson Log — Nilichofundisha</div>
-    <div style={{fontSize:13,color:C.textSoft,marginBottom:14}}>Jaza ulichofundisha kwa kila kipindi chako</div>
+    <div style={{fontSize:13,color:C.textSoft,marginBottom:14}}>Fill in what you taught for each of your periods</div>
     {msg&&<div className="success-box">{msg}</div>}
     <div className="card" style={{marginBottom:14}}>
       <label className="label">Tarehe</label>
@@ -2023,11 +2023,11 @@ function LessonLog({db,user}){
         </div>
         <div className="mb-8">
           <label className="label">Nilichofundisha *</label>
-          <input className="input" value={getDraft(row.key,"topic_taught")} placeholder="mfano: Mzunguko wa maji (water cycle)" onChange={e=>setDraft(row.key,"topic_taught",e.target.value)}/>
+          <input className="input" value={getDraft(row.key,"topic_taught")} placeholder="e.g. Water cycle" onChange={e=>setDraft(row.key,"topic_taught",e.target.value)}/>
         </div>
         <div className="mb-8">
-          <label className="label">Maelezo ya ziada (si lazima)</label>
-          <textarea className="input" rows={2} value={getDraft(row.key,"notes")} placeholder="Maoni, changamoto, kazi ya ziada..." onChange={e=>setDraft(row.key,"notes",e.target.value)}/>
+          <label className="label">Additional Notes (optional)</label>
+          <textarea className="input" rows={2} value={getDraft(row.key,"notes")} placeholder="Comments, challenges, extra work..." onChange={e=>setDraft(row.key,"notes",e.target.value)}/>
         </div>
         <button className="btn btn-orange" onClick={()=>saveLog(row)} disabled={saving===row.key}>{saving===row.key?"...":existing?"Sasisha":"Hifadhi"}</button>
       </div>;
@@ -2082,7 +2082,7 @@ function LessonLogReport({db,user}){
     </div>
     {loading&&<Spinner/>}
     {!loading&&<div className="card">
-      <div style={{fontSize:12,color:C.muted,marginBottom:10,fontWeight:700}}>Jumla ya rekodi: {filtered.length}</div>
+      <div style={{fontSize:12,color:C.muted,marginBottom:10,fontWeight:700}}>Total records: {filtered.length}</div>
       <table className="table">
         <thead><tr>{["Date","Class","Period","Subject","Teacher","Topic Taught","Notes"].map(h=><th key={h}>{h}</th>)}</tr></thead>
         <tbody>{filtered.map(l=><tr key={l.id}>
@@ -2159,7 +2159,7 @@ function Timetable({db,user}){
   const ecd=isEarlyChildhoodClass(cls?.name);
 
   return <div>
-    <div style={{fontSize:21,fontWeight:900,fontFamily:"'Playfair Display',serif",marginBottom:4}}>Ratiba ya Masomo</div>
+    <div style={{fontSize:21,fontWeight:900,fontFamily:"'Playfair Display',serif",marginBottom:4}}>Class Timetable</div>
     <div style={{fontSize:13,color:C.textSoft,marginBottom:18}}>Create the class timetable for each class</div>
 
     {msg&&<div className="success-box">{msg}</div>}
@@ -2295,7 +2295,7 @@ async function sendSMS(phone,message){
       if(!ok){
         const bodyStr=JSON.stringify(data?.body||data||"").toLowerCase();
         if(bodyStr.includes("sender")||bodyStr.includes("sender_id")||bodyStr.includes("not approved")||bodyStr.includes("pending")){
-          errDetail="Sender ID 'NAJMAN' bado pending kuidhinishwa na NextSMS. Tumia namba ya simu kama Sender ID kwa muda (angalia SMS Settings).";
+          errDetail="Sender ID 'NAJMAN' is still pending approval from NextSMS. Use your phone number as the Sender ID for now (see SMS Settings).";
         }else{
           errDetail=JSON.stringify(data?.body||data||"Unknown error").slice(0,300);
         }
@@ -2355,7 +2355,7 @@ function BulkSMS({db,user}){
   return <div>
     <div style={{fontSize:21,fontWeight:900,fontFamily:"'Playfair Display',serif",marginBottom:18}}>💬 Bulk SMS</div>
     <div className="card mb-12" style={{background:"rgba(245,166,35,.08)",border:"1px solid rgba(245,166,35,.35)",padding:"8px 12px"}}>
-      <span style={{fontSize:13,color:C.accent,fontWeight:700}}>⏳ Sender ID "NAJMAN" bado pending NextSMS</span> <span style={{fontSize:13,color:C.textSoft}}>— baadhi ya SMS zinaweza kushindwa. Angalia SMS History kwa sababu.</span>
+      <span style={{fontSize:13,color:C.accent,fontWeight:700}}>⏳ Sender ID "NAJMAN" still pending with NextSMS</span> <span style={{fontSize:13,color:C.textSoft}}>— baadhi ya SMS zinaweza kushindwa. Angalia SMS History kwa sababu.</span>
     </div>
     <div className="card mb-12">
       <label className="label">Message</label>
@@ -2476,7 +2476,7 @@ function Certificates({db,user}){
       {/* Controls */}
       <div style={{width:270,flexShrink:0}}>
         <div className="card">
-          <div style={{fontWeight:900,fontSize:14,marginBottom:10}}>Type ya Cheti</div>
+          <div style={{fontWeight:900,fontSize:14,marginBottom:10}}>Certificate Type</div>
           <div className="flex flex-wrap gap-6 mb-14">
             {TYPES.map(c=><button key={c.id} className={"tab-btn "+(type===c.id?"active":"")} onClick={()=>setType(c.id)}>{c.label}</button>)}
           </div>
@@ -2513,7 +2513,7 @@ function Certificates({db,user}){
 
       {/* Certificate Preview */}
       <div style={{flex:1,minWidth:320,overflowX:"auto"}}>
-        <div style={{fontSize:12,color:C.textSoft,fontWeight:700,marginBottom:8}}>Mfano wa Cheti (A4 Landscape)</div>
+        <div style={{fontSize:12,color:C.textSoft,fontWeight:700,marginBottom:8}}>Certificate Preview (A4 Landscape)</div>
         <div ref={ref} style={{
           width:756,minHeight:535,background:"#fffef8",
           border:`14px double ${cert.color}`,
@@ -2549,12 +2549,12 @@ function Certificates({db,user}){
           {/* Body */}
           <div style={{textAlign:"center",margin:"14px 0"}}>
             <div style={{fontSize:11,color:"#666",marginBottom:8,letterSpacing:1}}>This is to certify that</div>
-            <div style={{fontSize:26,fontWeight:900,fontFamily:"'Playfair Display',serif",color:"#1a1a1a",borderBottom:`2px solid ${cert.color}`,display:"inline-block",paddingBottom:3,minWidth:260}}>{student?.name||"Name la Mstudents"}</div>
+            <div style={{fontSize:26,fontWeight:900,fontFamily:"'Playfair Display',serif",color:"#1a1a1a",borderBottom:`2px solid ${cert.color}`,display:"inline-block",paddingBottom:3,minWidth:260}}>{student?.name||"Student Name"}</div>
             {student?.dob&&<div style={{fontSize:10,color:"#666",marginTop:5}}>D.O.B: {student.dob}{calcAge(student.dob)?` (Age: ${calcAge(student.dob)} years)`:""}</div>}
             <div style={{fontSize:11,color:"#444",margin:"12px auto",lineHeight:1.9,maxWidth:520}}
               dangerouslySetInnerHTML={{__html:student?bodyText(student,type):bodyText({name:"[Name]",class_name:"[Class]",dob:"",admission_date:"",parent:"",admission_no:""},type)}}>
             </div>
-            {student?.admission_no&&<div style={{fontSize:10,color:"#888",marginTop:2}}>Number ya Kuandikishwa: <strong>{student.admission_no}</strong></div>}
+            {student?.admission_no&&<div style={{fontSize:10,color:"#888",marginTop:2}}>Admission Number: <strong>{student.admission_no}</strong></div>}
           </div>
 
           {/* Footer - Signatures & Stamp */}
@@ -2893,7 +2893,7 @@ function Examinations({db,user}){
       ...rForm,exam_id:selExam.id,marks_obtained:marks,grade
     },{onConflict:"student_id,exam_id,subject_id"});
 
-    // ── AUTO: Hesabu GPA + Division bafees for kuhifadhi ──
+    // ── AUTO: Calculate GPA + Division before saving ──
     const {data:allRes}=await db.from("exam_results").select("marks_obtained,student_id").eq("exam_id",selExam.id).eq("student_id",rForm.student_id);
     if(allRes&&allRes.length>0){
       const avg=Math.round(allRes.reduce((s,r)=>s+r.marks_obtained,0)/allRes.length);
@@ -3002,10 +3002,10 @@ function Examinations({db,user}){
           <option value="">-- Select Exam --</option>{exams.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}
         </select>
         <select className="input" style={{width:140}} value={fClass} onChange={e=>setFClass(e.target.value)}><option>All</option>{classes.map(c=><option key={c.id}>{c.name}</option>)}</select>
-        <input className="input" style={{flex:1,minWidth:130}} placeholder="🔍 Tafuta mstudents..." value={examSearch} onChange={e=>setExamSearch(e.target.value)}/>
+        <input className="input" style={{flex:1,minWidth:130}} placeholder="🔍 Search student..." value={examSearch} onChange={e=>setExamSearch(e.target.value)}/>
         <button className="btn-ghost" style={{fontSize:13,padding:"8px 14px"}} onClick={()=>{
           const rows=results.filter(r=>(fClass==="All"||r.students?.class_name===fClass)&&(!selExam||r.exam_id===selExam.id)&&r.students?.name?.toLowerCase().includes(examSearch.toLowerCase()));
-          exportPDF("Matokeo ya Mtihani"+(selExam?` — ${selExam.name}`:""),
+          exportPDF("Exam Results"+(selExam?` — ${selExam.name}`:""),
             ["#","Name","Class","Subject","Marks","Daraja"],
             rows.map((r,i)=>[i+1,r.students?.name||"—",r.students?.class_name||"—",r.subjects?.name||"—",r.marks_obtained,r.grade]),
             "matokeo");
@@ -3034,7 +3034,7 @@ function Examinations({db,user}){
           <option value="">-- Select Exam --</option>{exams.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}
         </select>
         {selExam&&<button className="btn" style={{background:"linear-gradient(135deg,#16a34a,#22c55e)"}} onClick={()=>{
-          // ── AUTO: Print Report Cards za students WOTE mara moja ──
+          // ── AUTO: Print Report Cards for ALL students at once ──
           const positions=getPositions(selExam.id);
           const studentsWithResults=[...new Set(results.filter(r=>r.exam_id===selExam.id).map(r=>r.student_id))];
           if(!studentsWithResults.length){alert("No matokeo bado!");return;}
@@ -3330,7 +3330,7 @@ function ReceiptReview({db,user}){
       <div style={{fontSize:21,fontWeight:900,fontFamily:"'Playfair Display',serif"}}>🧾 Receipt Review</div>
       <button className="btn-ghost" style={{fontSize:13}} onClick={load}>🔄 Refresh</button>
     </div>
-    <div style={{fontSize:13,color:C.muted,marginBottom:12}}>Kila risiti iliyotolewa (Admin, Accountant, na Walimu) inaonekana hapa moja kwa moja baada ya kupokelewa.</div>
+    <div style={{fontSize:13,color:C.muted,marginBottom:12}}>Every receipt issued (Admin, Accountant, and Teachers) appears here immediately after kupokelewa.</div>
     <div className="flex gap-8 mb-12 flex-wrap">
       <input className="input" style={{flex:1,minWidth:160}} placeholder="🔍 Search student..." value={sq} onChange={e=>setSq(e.target.value)}/>
       <input className="input" type="date" style={{width:160}} value={fDate} onChange={e=>setFDate(e.target.value)}/>
@@ -3741,7 +3741,7 @@ function TeacherDebtorsView({db,user}){
 
   return <div>
     <div style={{fontSize:21,fontWeight:900,fontFamily:"'Playfair Display',serif",marginBottom:6}}>⚠️ Students Wanaodaiwa</div>
-    <div style={{fontSize:15,color:C.muted,marginBottom:16}}>Orodha ya students ambao bado hawajalipa ada — kwa taarifa tu.</div>
+    <div style={{fontSize:15,color:C.muted,marginBottom:16}}>List of students who have not yet paid fees — for information only.</div>
 
     <div className="flex gap-10 mb-14 flex-wrap">
       {[{l:"Debtors",v:debtors.length,c:C.red},{l:"Wamelipa",v:paid.length,c:C.green},{l:"Total",v:filtSt.length,c:C.blue}].map(x=>(
@@ -3789,7 +3789,7 @@ function TeacherDebtorsView({db,user}){
           <td>{badge(C.green,"✅ Amalipa")}</td>
         </tr>)}</tbody>
       </table>
-      {paid.length===0&&<div style={{padding:12,color:C.muted,textAlign:"center"}}>No mstudents aliyemaliza kulipa</div>}
+      {paid.length===0&&<div style={{padding:12,color:C.muted,textAlign:"center"}}>No students have fully paid yet</div>}
     </div>
   </div>;
 }
@@ -3949,7 +3949,7 @@ function SmsSettings({db,user}){
 
     <div className="card mb-12" style={{background:"rgba(245,166,35,.08)",border:"1px solid rgba(245,166,35,.35)"}}>
       <div style={{fontWeight:800,color:C.accent,fontSize:15,marginBottom:4}}>⏳ Sender ID "NAJMAN" — Pending Processing</div>
-      <div style={{fontSize:14,color:C.textSoft}}>NextSMS bado hawajaiidhinisha Sender ID yetu. SMS zinaweza kushindwa kutumwa au kutumika na sender ya muda mpaka iidhinishwe. Tumia "Test SMS" hapa chini kuangalia hali kila siku.</div>
+      <div style={{fontSize:14,color:C.textSoft}}>NextSMS has not yet approved our Sender ID. SMS may fail to send or use a temporary sender mpaka iidhinishwe. Tumia "Test SMS" hapa chini kuangalia hali kila siku.</div>
     </div>
 
     <div className="flex gap-12 flex-wrap">
@@ -3974,7 +3974,7 @@ function SmsSettings({db,user}){
           <div className="mb-12">
             <label className="label">Sender ID / Sender Number</label>
             <input className="input" value={cfg.sms_sender} onChange={e=>setCfg(c=>({...c,sms_sender:e.target.value}))} placeholder="NAJMAN or 255742415133"/>
-            <div style={{fontSize:13,color:C.muted,marginTop:2}}>Tumia namba (255...) wakati Sender ID bado pending; badilisha kuwa "NAJMAN" mara ikishaidhinishwa.</div>
+            <div style={{fontSize:13,color:C.muted,marginTop:2}}>Use a phone number (255...) while the Sender ID is still pending; switch to "NAJMAN" once approved.</div>
           </div>
           <div style={{height:1,background:"#e2e8f0",margin:"12px 0"}}/>
           <div className="mb-10">
@@ -4783,7 +4783,7 @@ function QuickActions({db,user,setPage}){
   const actions=[
     {i:"📝",l:"Enroll Student",p:"admissions",c:C.blue,cat:"Students"},
     {i:"👦",l:"Students Wote",p:"students",c:C.blue,cat:"Students"},
-    {i:"👤",l:"Wasifu wa Students",p:"student_profile",c:C.blue,cat:"Students"},
+    {i:"👤",l:"Student Profile",p:"student_profile",c:C.blue,cat:"Students"},
     {i:"📋",l:"Attendance",p:"attendance",c:C.teal,cat:"Students"},
     {i:"📓",l:"Student Diary",p:"diary",c:C.teal,cat:"Students"},
     {i:"💰",l:"Fee Overview",p:"fees",c:C.green,cat:"Finance",roles:["admin","accountant"]},
@@ -4802,7 +4802,7 @@ function QuickActions({db,user,setPage}){
     {i:"📲",l:"Fee Reminders",p:"sms_fee",c:C.blue,cat:"Communication",roles:["admin","accountant"]},
     {i:"📋",l:"PDF Reports",p:"reports",c:C.muted,cat:"Reports"},
     {i:"🎓",l:"Certificates",p:"certificates",c:C.muted,cat:"Reports"},
-    {i:"🪪",l:"Kadi za Students",p:"cards",c:C.muted,cat:"Reports"},
+    {i:"🪪",l:"Student Cards",p:"cards",c:C.muted,cat:"Reports"},
     {i:"⚙️",l:"Settings",p:"settings",c:C.muted,cat:"Settings",roles:["admin"]},
     {i:"⚡",l:"Automations",p:"automations",c:"#f5a623",cat:"Settings"},
     {i:"📚",l:"Library",p:"library",c:C.blue,cat:"Academics"},
@@ -4969,14 +4969,14 @@ function SmsAbsenceAlerts({db,user}){
   };
 
   return<div>
-    <div style={{fontSize:21,fontWeight:900,fontFamily:"'Playfair Display',serif",marginBottom:6}}>🔔 Notifications za Kutokuwepo <span className="v4-badge">v7.0</span></div>
-    <div style={{fontSize:13,color:C.muted,marginBottom:18}}>Send ujumbe kwa parents wa students walioabsent</div>
+    <div style={{fontSize:21,fontWeight:900,fontFamily:"'Playfair Display',serif",marginBottom:6}}>🔔 Absence Notifications <span className="v4-badge">v7.0</span></div>
+    <div style={{fontSize:13,color:C.muted,marginBottom:18}}>Send a message to parents of absent students</div>
     <div className="card" style={{marginBottom:14}}>
       <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
         <div><label className="label">Date</label><input className="input" type="date" value={date} onChange={e=>setDate(e.target.value)}/></div>
         <div style={{flex:1,minWidth:200}}>
           <div style={{padding:10,background:"rgba(239,68,68,.08)",borderRadius:8,fontSize:13}}>
-            <strong style={{color:C.red}}>{absentStudents.length}</strong> students walioabsent wenye simu za parents
+            <strong style={{color:C.red}}>{absentStudents.length}</strong> absent students with parent phone numbers
           </div>
         </div>
         <button className="btn btn-red" onClick={sendAlerts} disabled={sending||!absentStudents.length}>
@@ -5068,7 +5068,7 @@ function Reports({db,user}){
         <select className="input" style={{width:150}} value={fClass} onChange={e=>setFClass(e.target.value)}><option>All</option>{classes.map(c=><option key={c.id}>{c.name}</option>)}</select>
         <select className="input" style={{width:120}} value={fStatus} onChange={e=>setFStatus(e.target.value)}>{["All","Active","Left","Graduated"].map(s=><option key={s}>{s}</option>)}</select>
         <button className="btn-ghost" style={{fontSize:13,padding:"8px 14px"}} onClick={()=>exportPDF(
-          "Ripoti ya Students",["#","Name","Adm No","Class","Parent","Phone","Status","Fees"],
+          "Student Report",["#","Name","Adm No","Class","Parent","Phone","Status","Fees"],
           filtSt.map((s,i)=>[i+1,s.name,s.admission_no||"—",s.class_name,s.parent||"—",s.phone||"—",s.status,Number(s.term_fee||0).toLocaleString()]),
           "ripoti_students"
         )}>📄 Export PDF</button>
@@ -5092,8 +5092,8 @@ function Reports({db,user}){
         <div style={{fontWeight:800,marginBottom:12,fontSize:15}}>📋 School Summary</div>
         <button className="btn-ghost" style={{marginBottom:12,fontSize:13}} onClick={()=>exportPDF(
           "School Summary",["Item","Value"],
-          [["Students (Active)",students.filter(s=>s.status==="Active").length],["Students (Left)",students.filter(s=>s.status==="Left").length],["Students (Graduated)",students.filter(s=>s.status==="Graduated").length],["Total ya Students",students.length]],
-          "muhtasari"
+          [["Students (Active)",students.filter(s=>s.status==="Active").length],["Students (Left)",students.filter(s=>s.status==="Left").length],["Students (Graduated)",students.filter(s=>s.status==="Graduated").length],["Total Students",students.length]],
+          "summary"
         )}>📄 Print Summary</button>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
           {[{l:"Active",v:students.filter(s=>s.status==="Active").length,c:C.green},{l:"Left",v:students.filter(s=>s.status==="Left").length,c:C.red},{l:"Graduated",v:students.filter(s=>s.status==="Graduated").length,c:C.blue},{l:"Total",v:students.length,c:C.muted}].map(x=>(
@@ -5145,7 +5145,7 @@ function Settings({db,user,setPage}){
       <div style={{fontWeight:800,marginBottom:14,color:C.accent,fontSize:15}}>🏫 School Details</div>
       <div className="grid-2">
         <div className="grid-full"><Field label="School Name" value={cfg.school_name} onChange={v=>setCfg(c=>({...c,school_name:v}))}/></div>
-        <div><Field label="Number ya Phone" value={cfg.school_phone} onChange={v=>setCfg(c=>({...c,school_phone:v}))}/></div>
+        <div><Field label="Phone Number" value={cfg.school_phone} onChange={v=>setCfg(c=>({...c,school_phone:v}))}/></div>
         <div><Field label="Email" value={cfg.school_email} onChange={v=>setCfg(c=>({...c,school_email:v}))} type="email"/></div>
         <div><Field label="Motto" value={cfg.school_motto} onChange={v=>setCfg(c=>({...c,school_motto:v}))}/></div>
         <div><Field label="P.O. Box" value={cfg.po_box} onChange={v=>setCfg(c=>({...c,po_box:v}))}/></div>
@@ -5153,7 +5153,7 @@ function Settings({db,user,setPage}){
       </div>
     </div>}
     {tab==="academic"&&<div className="card">
-      <div style={{fontWeight:800,marginBottom:14,color:C.accent,fontSize:15}}>🎓 Academic wa Masomo</div>
+      <div style={{fontWeight:800,marginBottom:14,color:C.accent,fontSize:15}}>🎓 Academic Records</div>
       <div className="grid-2">
         <div><Select label="Academic Year" value={cfg.academic_year} onChange={v=>setCfg(c=>({...c,academic_year:v}))} options={["2024","2025","2026","2027","2028"]}/></div>
         <div><Select label="Current Term" value={cfg.current_term} onChange={v=>setCfg(c=>({...c,current_term:v}))} options={TERMS}/></div>
@@ -5202,7 +5202,7 @@ function Settings({db,user,setPage}){
       </div>
       <div className="card" style={{background:"rgba(245,166,35,.06)",border:"1px solid rgba(245,166,35,.3)"}}>
         <div style={{fontWeight:800,marginBottom:8,color:C.accent,fontSize:15}}>📋 v5.0 Changelog</div>
-        {["✅ Dashboard v7.0 with payment charts","✅ Auto Receipt after every payment","✅ Auto-usajili mstudents bafees for Admission","✅ Auto Control Number kwa mstudents mpya","✅ Auto SMS kwa parents wa walioabsent","✅ Auto GPA/Division and class ranking","✅ Print Report Cards zote kwa click moja","✅ Fee protection — teachers cannot see finances","✅ Back navigation (breadcrumbs)"].map((m,i)=>(
+        {["✅ Dashboard v7.0 with payment charts","✅ Auto Receipt after every payment","✅ Auto-register students on Admission","✅ Auto Control Number for new students","✅ Auto SMS for absent students' parents","✅ Auto GPA/Division and class ranking","✅ Print all Report Cards with one click","✅ Fee protection — teachers cannot see finances","✅ Back navigation (breadcrumbs)"].map((m,i)=>(
           <div key={i} style={{fontSize:12,padding:"4px 0",color:C.textSoft,borderBottom:"1px solid #e2e8f0"}}>{m}</div>
         ))}
       </div>
@@ -5228,7 +5228,7 @@ function UserAccounts({db,user}){
       const{data,error}=await db.auth.admin?db.auth.admin.createUser({email:form.email,email_confirm:true,user_metadata:{full_name:form.full_name}}):null;
       if(error)throw error;
       setMsg("✅ User ameundwa! Waambie waweke nenosiri kupitia barua pepe.");
-    }catch(e){setMsg(`ℹ️ ${e.message||"Wasiliana na admin kuweka akaunti mpya kupitia Supabase Dashboard."}`);} 
+    }catch(e){setMsg(`ℹ️ ${e.message||"Contact admin to set up a new account via the Supabase Dashboard."}`);} 
     setCreating(false);
   };
 
@@ -5241,7 +5241,7 @@ function UserAccounts({db,user}){
     </div>
     <div className="card" style={{marginBottom:14,background:"rgba(245,166,35,.06)",border:"1px solid rgba(245,166,35,.3)"}}>
       <div style={{fontWeight:700,marginBottom:4,color:C.accent,fontSize:14}}>ℹ️ User Roles</div>
-      {[["admin","Full access - complete management"],["teacher","Students, mahudhurio, mitihani, kazi za nyumbani"],["accountant","Fees and finance (no staff data)"],["parent","Parent portal only"]].map(([r,d])=>(
+      {[["admin","Full access - complete management"],["teacher","Students, attendance, exams, homework"],["accountant","Fees and finance (no staff data)"],["parent","Parent portal only"]].map(([r,d])=>(
         <div key={r} style={{display:"flex",gap:8,padding:"4px 0",fontSize:12}}><span style={{background:`${ROLE_COLORS[r]}22`,color:ROLE_COLORS[r],borderRadius:8,padding:"1px 7px",fontWeight:700,minWidth:70,textAlign:"center"}}>{r}</span><span style={{color:C.textSoft}}>{d}</span></div>
       ))}
     </div>
@@ -5336,7 +5336,7 @@ function ControlNumbers({db,user}){
     </table>
     <div class="perm">♾️ NAMBARI HII NI YA KUDUMU — TUMIA KILA WAKATI</div>
     <div style="margin-top:12px;padding:10px;background:#f9f9f9;border:1px solid #ddd;border-radius:6px;font-size:11px;">
-      <strong>Njia za Kulipa:</strong><br/>
+      <strong>Payment Methods:</strong><br/>
       ${feeSettings.mpesa_number?`M-Pesa: <strong>${feeSettings.mpesa_number}</strong> (${feeSettings.mpesa_name||"Najman School"})<br/>`:""}
       ${feeSettings.tigopesa_number?`Tigo Pesa: <strong>${feeSettings.tigopesa_number}</strong><br/>`:""}
       ${feeSettings.airtel_number?`Airtel Money: <strong>${feeSettings.airtel_number}</strong><br/>`:""}
@@ -5347,7 +5347,7 @@ function ControlNumbers({db,user}){
   };
 
   const sendCtrlSMS=async(st)=>{
-    if(!st.phone){alert("Student hana nambari ya simu!");return;}
+    if(!st.phone){alert("Student has no phone number!");return;}
 
 
     const msg=`Dear ${st.parent||"Parent"}, nambari ya kudumu ya kulipa ada kwa ${st.name} (${st.class_name}): ${st.control_number}. Ada ya Term: TZS ${Number(st.term_fee||0).toLocaleString()}. Najman Education Centre +255 742 415 133`;
