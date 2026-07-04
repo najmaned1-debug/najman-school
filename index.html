@@ -156,6 +156,7 @@ select.input option{background:#ffffff;color:#1e293b;font-weight:700;}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin></script>
 
 <script>
 window.addEventListener('load', function() {
@@ -767,7 +768,89 @@ function TeacherFeeCollect({db,user}){
   </div>;
 }
 
+// ── DUTY CHECK-IN — public QR scan page, no login required ──
+function DutyCheckIn(){
+  const [staff,setStaff]=useState([]);
+  const [duty,setDuty]=useState(null);
+  const [loading,setLoading]=useState(true);
+  const [selected,setSelected]=useState("");
+  const [saving,setSaving]=useState(false);
+  const [done,setDone]=useState(null);
+  const today=DAY_NAMES[new Date().getDay()];
+  const isWeekend=today==="Saturday"||today==="Sunday";
+
+  const load=async()=>{
+    setLoading(true);
+    const {data:d}=await db.from("duty_roster").select("*,staff(id,name,phone,photo_url)").eq("day",today).maybeSingle();
+    setDuty(d||null);
+    const {data:s}=await db.from("staff").select("id,name,role").eq("status","Active").order("name");
+    setStaff(s||[]);
+    if(d?.staff_id) setSelected(d.staff_id);
+    setLoading(false);
+  };
+  useEffect(()=>{load();},[]);
+
+  const checkIn=async()=>{
+    if(!selected){alert("Please select your name first");return;}
+    setSaving(true);
+    const now=new Date();
+    const timeStr=now.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+    if(duty){
+      await db.from("duty_roster").update({staff_id:selected,checked_in_at:now.toISOString()}).eq("id",duty.id);
+    } else {
+      await db.from("duty_roster").insert({day:today,staff_id:selected,checked_in_at:now.toISOString()});
+    }
+    const staffName=staff.find(s=>s.id===selected)?.name||"";
+    setDone({name:staffName,time:timeStr});
+    setSaving(false);
+  };
+
+  const wrap=(inner)=><div style={{minHeight:"100vh",background:"linear-gradient(180deg,#1e3a5f 0%,#1a3050 60%,#162a4f 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+    <div style={{background:"#fff",borderRadius:16,padding:28,maxWidth:420,width:"100%",boxShadow:"0 10px 40px rgba(0,0,0,.3)",textAlign:"center"}}>
+      <div style={{fontSize:40,marginBottom:6}}>🎖️</div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontWeight:900,fontSize:20,color:"#1e3a5f",marginBottom:4}}>Teacher on Duty</div>
+      <div style={{fontSize:13,color:"#64748b",marginBottom:20}}>Najman Education Centre — {today}, {fmtDate()}</div>
+      {inner}
+    </div>
+  </div>;
+
+  if(loading) return wrap(<Spinner/>);
+
+  if(isWeekend) return wrap(
+    <div style={{padding:"20px 0",color:"#94a3b8"}}>🌤️ It's the weekend — no duty check-in today.</div>
+  );
+
+  if(done) return wrap(<div>
+    <div style={{fontSize:50,marginBottom:10}}>✅</div>
+    <div style={{fontSize:18,fontWeight:800,color:"#16a34a",marginBottom:4}}>Checked in successfully!</div>
+    <div style={{fontSize:15,color:"#1e293b"}}><strong>{done.name}</strong></div>
+    <div style={{fontSize:13,color:"#64748b",marginTop:2}}>Arrived at {done.time}</div>
+  </div>);
+
+  return wrap(<div>
+    {duty?.checked_in_at
+      ? <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:10,padding:"10px 14px",marginBottom:16,fontSize:13,color:"#16a34a"}}>
+          ✅ {duty.staff?.name} already checked in at {new Date(duty.checked_in_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}
+        </div>
+      : <div style={{background:"#fff7ed",border:"1px solid #fed7aa",borderRadius:10,padding:"10px 14px",marginBottom:16,fontSize:13,color:"#c2410c"}}>
+          ⏳ No check-in recorded yet for today
+        </div>
+    }
+    <div style={{textAlign:"left",marginBottom:14}}>
+      <label style={{fontSize:12,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:.5}}>Select your name</label>
+      <select className="input" style={{marginTop:6}} value={selected} onChange={e=>setSelected(e.target.value)}>
+        <option value="">-- Select --</option>
+        {staff.map(s=><option key={s.id} value={s.id}>{s.name}{s.role?` (${s.role})`:""}</option>)}
+      </select>
+    </div>
+    <button className="btn btn-orange w-full" onClick={checkIn} disabled={saving}>{saving?"⏳ Checking in...":"✅ I'm Here — Check In"}</button>
+  </div>);
+}
+
 function App() {
+  const isDutyCheckIn = new URLSearchParams(window.location.search).get("duty")==="checkin";
+  if(isDutyCheckIn) return <DutyCheckIn/>;
+
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState("home");
@@ -1851,6 +1934,8 @@ function DutyRoster({db}){
   const [roster,setRoster]=useState({});
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
+  const qrRef=useRef(null);
+  const checkinUrl=window.location.origin+window.location.pathname+"?duty=checkin";
 
   const load=async()=>{
     setLoading(true);
@@ -1861,6 +1946,13 @@ function DutyRoster({db}){
     setLoading(false);
   };
   useEffect(()=>{load();},[]);
+
+  useEffect(()=>{
+    if(qrRef.current && window.QRCode){
+      qrRef.current.innerHTML="";
+      new window.QRCode(qrRef.current,{text:checkinUrl,width:160,height:160,colorDark:"#1e3a5f",colorLight:"#ffffff"});
+    }
+  },[loading]);
 
   const setDay=(day,staffId)=>setRoster(r=>({...r,[day]:staffId}));
 
@@ -1885,6 +1977,15 @@ function DutyRoster({db}){
   return <div>
     <div style={{fontSize:21,fontWeight:900,fontFamily:"'Playfair Display',serif",marginBottom:4}}>🎖️ Duty Roster</div>
     <div style={{fontSize:13,color:C.textSoft,marginBottom:18}}>Assign a Teacher on Duty for each weekday — repeats every week</div>
+
+    <div className="card" style={{marginBottom:16,textAlign:"center"}}>
+      <div style={{fontWeight:800,fontSize:14,marginBottom:4}}>📷 Duty Check-In QR Code</div>
+      <div style={{fontSize:12,color:C.textSoft,marginBottom:12}}>Print this and stick it at the school entrance. The teacher on duty scans it each morning to check in.</div>
+      <div ref={qrRef} style={{display:"flex",justifyContent:"center",marginBottom:10}}/>
+      <div style={{fontSize:11,color:C.muted,wordBreak:"break-all"}}>{checkinUrl}</div>
+      <button className="btn-ghost" style={{marginTop:10,fontSize:12}} onClick={()=>window.print()}>🖨️ Print QR</button>
+    </div>
+
     <div className="card">
       {DUTY_DAYS.map(day=>(
         <div key={day} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 0",borderBottom:"1px solid "+C.border}}>
@@ -4592,6 +4693,11 @@ function TeacherOnDuty({db}){
         ? <div style={{fontSize:16,fontWeight:800,color:C.text}}>{duty.staff.name}{duty.staff.phone?<span style={{fontSize:12,color:C.textSoft,fontWeight:600}}> · {duty.staff.phone}</span>:null}</div>
         : <div style={{fontSize:13,color:C.muted}}>No teacher assigned for today — set it in Staff → Duty Roster</div>
       }
+      {duty?.staff?.name && (
+        duty.checked_in_at
+          ? <div style={{fontSize:12,color:C.green,fontWeight:700,marginTop:2}}>✅ Checked in at {new Date(duty.checked_in_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</div>
+          : <div style={{fontSize:12,color:C.accent,fontWeight:700,marginTop:2}}>⏳ Not checked in yet</div>
+      )}
     </div>
   </div>;
 }
