@@ -319,6 +319,7 @@ const NAV = [
   {id:"staff_m", icon:"👨‍🏫", label:"Staff Management", roles:["admin"], sub:[
     {id:"staff",label:"All Staff"},
     {id:"staff_profile",label:"Staff Profiles"},
+    {id:"duty_roster",label:"Duty Roster"},
     {id:"roles",label:"Role Statements"},
     {id:"staffatt",label:"Staff Attendance"},
     {id:"users",label:"User Accounts"},
@@ -543,7 +544,7 @@ function TeacherPortal({db,user,setPage}){
     <div className="flex gap-8 mb-16">
       <button className={`btn ${tab==="students"?"btn-orange":""}`} onClick={()=>setTab("students")}>📝 Register Student</button>
       <button className={`btn ${tab==="fees"?"btn-orange":""}`} onClick={()=>setTab("fees")}>💰 Collect Fees</button>
-      <button className={`btn ${tab==="attendance"?"btn-orange":""}`} onClick={()=>setTab("attendance")}>✅ Mahudhurio</button>
+      <button className={`btn ${tab==="attendance"?"btn-orange":""}`} onClick={()=>setTab("attendance")}>✅ Attendance</button>
       <button className={`btn ${tab==="lesson_log"?"btn-orange":""}`} onClick={()=>setTab("lesson_log")}>📔 Lesson Log</button>
     </div>
     {tab==="students" && <TeacherStudentReg db={db} user={user}/>}
@@ -841,7 +842,7 @@ function App() {
       </div>
       {/* ── BACK BAR ─────────────────────────────────── */}
       {pageHistory.length>0&&page!=="home"&&(()=>{
-        const PAGE_LABELS={"home":"Home","students":"Students","staff":"Staff","fees":"Fees","attendance":"Attendance","admissions":"Admissions","classes":"Classes","subjects":"Subjects","timetable":"Timetable","exams":"Exams","exam_results":"Results","report_cards":"Report Cards","rankings":"Rankings","homework":"Homework","materials":"Learning Materials","live_class":"Live Class","diary":"Diary","grad_left":"Wahitimu / Walioacha","student_profile":"Student Profile","staff_profile":"Staff Profile","fees":"Fee Overview","fee_history":"Payment History","receipt_review":"Receipt Review","fee_debtors":"Debtors","fee_report":"Fee Report","fee_settings":"Fee Settings","financial_summary":"Financial Summary","controls":"Control Numbers","billing":"Individual Billing","finance":"Income & Expenses","bank":"Bank Accounts","sms":"Send SMS","sms_fee":"Fee Reminders","sms_absent":"Absence Alerts","sms_log":"SMS History","reports":"Reports","att_report":"Attendance Report","exam_report":"Exam Report","lesson_log_report":"Lesson Log Report","certificates":"Certificates","cards":"Student Cards","parent":"Parent Portal","payment_followup":"Payment Follow-up","settings":"Settings","automations":"Automations","library":"Library","transport":"Transport","discipline":"Discipline","health":"Health Records","payroll":"Payroll","assets":"Assets & Inventory","alumni":"Alumni","documents":"Documents","staffatt":"Staff Attendance","users":"User Accounts","roles":"Roles","quickactions":"Quick Actions","notifications":"Notifications","dashboard":"Dashboard","db_info":"Database","backup":"Backup"};
+        const PAGE_LABELS={"home":"Home","students":"Students","staff":"Staff","duty_roster":"Duty Roster","fees":"Fees","attendance":"Attendance","admissions":"Admissions","classes":"Classes","subjects":"Subjects","timetable":"Timetable","exams":"Exams","exam_results":"Results","report_cards":"Report Cards","rankings":"Rankings","homework":"Homework","materials":"Learning Materials","live_class":"Live Class","diary":"Diary","grad_left":"Wahitimu / Walioacha","student_profile":"Student Profile","staff_profile":"Staff Profile","fees":"Fee Overview","fee_history":"Payment History","receipt_review":"Receipt Review","fee_debtors":"Debtors","fee_report":"Fee Report","fee_settings":"Fee Settings","financial_summary":"Financial Summary","controls":"Control Numbers","billing":"Individual Billing","finance":"Income & Expenses","bank":"Bank Accounts","sms":"Send SMS","sms_fee":"Fee Reminders","sms_absent":"Absence Alerts","sms_log":"SMS History","reports":"Reports","att_report":"Attendance Report","exam_report":"Exam Report","lesson_log_report":"Lesson Log Report","certificates":"Certificates","cards":"Student Cards","parent":"Parent Portal","payment_followup":"Payment Follow-up","settings":"Settings","automations":"Automations","library":"Library","transport":"Transport","discipline":"Discipline","health":"Health Records","payroll":"Payroll","assets":"Assets & Inventory","alumni":"Alumni","documents":"Documents","staffatt":"Staff Attendance","users":"User Accounts","roles":"Roles","quickactions":"Quick Actions","notifications":"Notifications","dashboard":"Dashboard","db_info":"Database","backup":"Backup"};
         const prevLabel=PAGE_LABELS[pageHistory[pageHistory.length-1]]||pageHistory[pageHistory.length-1];
         const currLabel=PAGE_LABELS[page]||page;
         return<div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",background:"rgba(59,130,246,.08)",border:"1px solid rgba(59,130,246,.3)",borderRadius:10,marginBottom:14,flexWrap:"wrap"}}>
@@ -868,6 +869,7 @@ function App() {
       {page==="students"     && <Students {...P}/>}
       {page==="attendance"   && <Attendance {...P}/>}
       {page==="staff"        && <Staff {...P}/>}
+      {page==="duty_roster"  && <DutyRoster {...P}/>}
       {page==="users"        && <UserAccounts {...P}/>}
       {page==="fees"         && <Fees {...P}/>}
       {page==="finance"      && <Finance {...P}/>}
@@ -1179,7 +1181,7 @@ function GraduatedLeftStudents({db,user}){
     </div>
 
     <div className="card flex gap-8 flex-wrap mb-10" style={{marginBottom:14}}>
-      <input className="input" style={{flex:1,minWidth:140}} placeholder="🔍 Tafuta jina..." value={search} onChange={e=>setSearch(e.target.value)}/>
+      <input className="input" style={{flex:1,minWidth:140}} placeholder="🔍 Search by name..." value={search} onChange={e=>setSearch(e.target.value)}/>
       <select className="input" style={{width:130}} value={fYear} onChange={e=>setFYear(e.target.value)}>
         <option value="All">Miaka Yote</option>
         {years.map(y=><option key={y} value={y}>{y}</option>)}
@@ -1841,6 +1843,63 @@ function periodStatus(periodStr,now){
   return "past";
 }
 const DAY_NAMES=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const DUTY_DAYS=["Monday","Tuesday","Wednesday","Thursday","Friday"];
+
+// ── DUTY ROSTER — weekly Teacher on Duty schedule ───────
+function DutyRoster({db}){
+  const {data:staff,loading:loadingStaff}=useDB("staff",{order:"name",eq:{status:"Active"}});
+  const [roster,setRoster]=useState({});
+  const [loading,setLoading]=useState(true);
+  const [saving,setSaving]=useState(false);
+
+  const load=async()=>{
+    setLoading(true);
+    const {data}=await db.from("duty_roster").select("*");
+    const map={};
+    (data||[]).forEach(r=>{map[r.day]=r.staff_id;});
+    setRoster(map);
+    setLoading(false);
+  };
+  useEffect(()=>{load();},[]);
+
+  const setDay=(day,staffId)=>setRoster(r=>({...r,[day]:staffId}));
+
+  const saveAll=async()=>{
+    setSaving(true);
+    for(const day of DUTY_DAYS){
+      const staffId=roster[day]||null;
+      const {data:existing}=await db.from("duty_roster").select("id").eq("day",day).maybeSingle();
+      if(!staffId){
+        if(existing) await db.from("duty_roster").delete().eq("day",day);
+        continue;
+      }
+      if(existing) await db.from("duty_roster").update({staff_id:staffId}).eq("day",day);
+      else await db.from("duty_roster").insert({day,staff_id:staffId});
+    }
+    setSaving(false);
+    load();
+  };
+
+  if(loading||loadingStaff) return <Spinner/>;
+
+  return <div>
+    <div style={{fontSize:21,fontWeight:900,fontFamily:"'Playfair Display',serif",marginBottom:4}}>🎖️ Duty Roster</div>
+    <div style={{fontSize:13,color:C.textSoft,marginBottom:18}}>Assign a Teacher on Duty for each weekday — repeats every week</div>
+    <div className="card">
+      {DUTY_DAYS.map(day=>(
+        <div key={day} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 0",borderBottom:"1px solid "+C.border}}>
+          <div style={{width:100,fontWeight:800,fontSize:14}}>{day}</div>
+          <select className="input" style={{flex:1}} value={roster[day]||""} onChange={e=>setDay(day,e.target.value||null)}>
+            <option value="">-- No teacher assigned --</option>
+            {staff.map(s=><option key={s.id} value={s.id}>{s.name}{s.role?` (${s.role})`:""}</option>)}
+          </select>
+        </div>
+      ))}
+      <button className="btn btn-orange" style={{marginTop:16}} onClick={saveAll} disabled={saving}>{saving?"⏳ Saving...":"💾 Save Roster"}</button>
+    </div>
+  </div>;
+}
+
 
 function LiveClassActivity({db}){
   const [classes,setClasses]=useState([]);
@@ -4505,6 +4564,38 @@ function LiveClass({db,user}){
 }
 
 // ── V4.0: DASHBOARD YA KISASA ─────────────────────────
+// ── TEACHER ON DUTY (today's widget) ──────────────────
+function TeacherOnDuty({db}){
+  const [duty,setDuty]=useState(null);
+  const [loading,setLoading]=useState(true);
+  const today=DAY_NAMES[new Date().getDay()];
+  const isWeekend=today==="Saturday"||today==="Sunday";
+
+  useEffect(()=>{(async()=>{
+    if(isWeekend){setLoading(false);return;}
+    const {data}=await db.from("duty_roster").select("*,staff(name,phone,photo_url)").eq("day",today).maybeSingle();
+    setDuty(data);
+    setLoading(false);
+  })();},[]);
+
+  if(loading) return null;
+  if(isWeekend) return null;
+
+  return <div className="card" style={{display:"flex",alignItems:"center",gap:14,borderLeft:`4px solid ${C.accent}`,marginBottom:16}}>
+    {duty?.staff?.photo_url
+      ? <img src={duty.staff.photo_url} style={{width:48,height:48,borderRadius:"50%",objectFit:"cover"}}/>
+      : <div style={{width:48,height:48,borderRadius:"50%",background:C.accent,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>🎖️</div>
+    }
+    <div style={{flex:1}}>
+      <div style={{fontSize:11,color:C.muted,fontWeight:800,letterSpacing:1,textTransform:"uppercase"}}>Teacher on Duty — {today}</div>
+      {duty?.staff?.name
+        ? <div style={{fontSize:16,fontWeight:800,color:C.text}}>{duty.staff.name}{duty.staff.phone?<span style={{fontSize:12,color:C.textSoft,fontWeight:600}}> · {duty.staff.phone}</span>:null}</div>
+        : <div style={{fontSize:13,color:C.muted}}>No teacher assigned for today — set it in Staff → Duty Roster</div>
+      }
+    </div>
+  </div>;
+}
+
 function Dashboard({db,user,setPage}){
   const [stats,setStats]=useState({students:0,staff:0,fees:0,paid:0,pending:0,present:0,absent:0,debtors:0});
   const [monthlyData,setMonthlyData]=useState([]);
@@ -4583,6 +4674,9 @@ function Dashboard({db,user,setPage}){
         </div>
       </div>
     </div>
+
+    {/* Teacher on Duty */}
+    <TeacherOnDuty db={db}/>
 
     {/* Live School Activity */}
     <div style={{marginBottom:16}}><LiveClassActivity db={db}/></div>
@@ -4797,6 +4891,7 @@ function QuickActions({db,user,setPage}){
     {i:"📖",l:"Learning Materials",p:"materials",c:C.accent,cat:"Subjects"},
     {i:"🎥",l:"Live Class",p:"live_class",c:"#a855f7",cat:"Subjects"},
     {i:"👨‍🏫",l:"Staff",p:"staff",c:"#f97316",cat:"Staff"},
+    {i:"🎖️",l:"Duty Roster",p:"duty_roster",c:C.accent,cat:"Staff"},
     {i:"📋",l:"Staff Attendance",p:"staffatt",c:"#f97316",cat:"Staff"},
     {i:"💬",l:"Send SMS",p:"sms",c:C.blue,cat:"Communication",roles:["admin"]},
     {i:"📲",l:"Fee Reminders",p:"sms_fee",c:C.blue,cat:"Communication",roles:["admin","accountant"]},
@@ -5398,7 +5493,7 @@ function ControlNumbers({db,user}){
 
     {/* Filter */}
     <div className="flex gap-8 mb-12 flex-wrap">
-      <input className="input" style={{flex:1,minWidth:150}} placeholder="🔍 Tafuta jina au nambari..." value={search} onChange={e=>setSearch(e.target.value)}/>
+      <input className="input" style={{flex:1,minWidth:150}} placeholder="🔍 Search by name or number..." value={search} onChange={e=>setSearch(e.target.value)}/>
       <select className="input" style={{width:150}} value={fClass} onChange={e=>setFClass(e.target.value)}>
         <option>All</option>{classes.map(c=><option key={c.id}>{c.name}</option>)}
       </select>
