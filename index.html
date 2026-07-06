@@ -2600,13 +2600,12 @@ function Certificates({db,user}){
       </svg>;
 
   const SigBlock = ({img,name,title}) => <div style={{textAlign:"center",minWidth:160}}>
-    <div style={{height:55,display:"flex",alignItems:"flex-end",justifyContent:"center",marginBottom:4}}>
-      {img
-        ?<img src={img} style={{maxHeight:52,maxWidth:150,objectFit:"contain"}}/>
-        :<div style={{borderBottom:"2px solid #333",width:150}}/>}
+    <div style={{fontSize:12,fontWeight:900,fontFamily:"'Playfair Display',serif",color:"#1a1a1a",marginBottom:1}}>{name}</div>
+    <div style={{fontSize:10,color:"#555",fontStyle:"italic",marginBottom:4}}>{title}</div>
+    <div style={{height:40,display:"flex",alignItems:"flex-end",justifyContent:"center",marginBottom:2}}>
+      {img&&<img src={img} style={{maxHeight:38,maxWidth:150,objectFit:"contain"}}/>}
     </div>
-    <div style={{fontSize:12,fontWeight:900,fontFamily:"'Playfair Display',serif",color:"#1a1a1a"}}>{name}</div>
-    <div style={{fontSize:10,color:"#555",fontStyle:"italic"}}>{title}</div>
+    <div style={{borderTop:"2px solid #333",width:150,margin:"0 auto"}}/>
   </div>;
 
   const print = () => {
@@ -2691,7 +2690,7 @@ function Certificates({db,user}){
           {/* Header */}
           <div style={{textAlign:"center",marginBottom:10}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:14,marginBottom:4}}>
-              <img src={SCHOOL_LOGO} style={{width:60,height:60,objectFit:"contain"}}/>
+              <img src={SCHOOL_LOGO} style={{width:92,height:92,objectFit:"contain"}}/>
               <div style={{textAlign:"left"}}>
                 <div style={{fontSize:14,letterSpacing:2,color:cert.color,textTransform:"uppercase",fontWeight:900,fontFamily:"'Playfair Display',serif"}}>Najman Education Centre</div>
                 <div style={{fontSize:9,color:"#888",letterSpacing:1,marginTop:2}}>Kishili, Mwanza, Tanzania • Tel: +255 742 415 133</div>
