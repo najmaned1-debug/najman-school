@@ -2754,8 +2754,8 @@ function Cards({db,user}){
   const [year,setYear] = useState(new Date().getFullYear().toString());
   const print = () => {
     const w = window.open("","_blank");
-    w.document.write(`<html><head><title>Cards</title><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet"><style>body{margin:0;padding:16px;background:#f5f5f5;font-family:'Nunito',sans-serif;}.grid{display:flex;flex-wrap:wrap;gap:12px;}.card{width:236px;height:144px;background:linear-gradient(135deg,#0b1120 60%,#1a3a6a);border-radius:11px;padding:12px;color:#fff;position:relative;overflow:hidden;flex-shrink:0;}.top{display:flex;gap:8px;align-items:flex-start;}.ph{width:44px;height:44px;border-radius:8px;background:rgba(255,255,255,.1);border:1.5px solid rgba(245,166,35,.5);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;}.ph img{width:100%;height:100%;object-fit:cover;}.h{font-size:7px;letter-spacing:2px;color:#f5a623;text-transform:uppercase;margin-bottom:4px;}.n{font-size:14px;font-weight:900;}.c{font-size:9px;color:#94a3b8;}.id{font-size:8px;color:#f5a623;margin-top:6px;}.ft{position:absolute;bottom:8px;left:12px;font-size:6px;color:#6b7280;}.fy{font-size:8px;color:#f5a623;font-weight:700;}.ico{position:absolute;bottom:5px;right:12px;font-size:24px;opacity:.22;}@page{size:A4;margin:11mm;}@media print{body{background:#fff;}}</style></head><body><div class="grid">
-    ${students.filter(s=>selected.includes(s.id)).map(s=>`<div class="card"><div class="top"><div class="ph">${s.photo_url?`<img src="${s.photo_url}"/>`:"👦"}</div><div><div class="h">Najman Pre Primary School</div><div class="n">${s.name}</div><div class="c">${s.class_name}</div></div></div>${s.parent?`<div class="c">Parent: ${s.parent}</div>`:""}<div class="id">ID: ${String(s.id).slice(0,8).toUpperCase()}</div><div class="ft">KISHILI • MWANZA<br/><span class="fy">Year ${year}</span></div><div class="ico">🎓</div></div>`).join("")}
+    w.document.write(`<html><head><title>Cards</title><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet"><style>body{margin:0;padding:16px;background:#f5f5f5;font-family:'Nunito',sans-serif;}.grid{display:flex;flex-wrap:wrap;gap:12px;}.card{width:236px;height:144px;background:linear-gradient(135deg,#0b1120 60%,#1a3a6a);border-radius:11px;padding:12px;color:#fff;position:relative;overflow:hidden;flex-shrink:0;}.top{display:flex;gap:8px;align-items:flex-start;}.ph{width:40px;height:40px;border-radius:8px;background:rgba(255,255,255,.1);border:1.5px solid rgba(245,166,35,.5);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;}.ph img{width:100%;height:100%;object-fit:cover;}.h{font-size:8px;letter-spacing:1.5px;color:#f5a623;text-transform:uppercase;margin-bottom:3px;}.n{font-size:13px;font-weight:900;line-height:1.15;}.c{font-size:10px;color:#94a3b8;}.meta{font-size:8.5px;color:#94a3b8;margin-top:5px;line-height:1.5;}.meta .adm{color:#f5a623;font-weight:700;}.ft{position:absolute;bottom:8px;left:12px;font-size:8px;color:#6b7280;}.fy{font-size:11px;color:#f5a623;font-weight:700;}.ico{position:absolute;bottom:5px;right:12px;font-size:20px;opacity:.22;}@page{size:A4;margin:11mm;}@media print{body{background:#fff;}}</style></head><body><div class="grid">
+    ${students.filter(s=>selected.includes(s.id)).map(s=>`<div class="card"><div class="top"><div class="ph">${s.photo_url?`<img src="${s.photo_url}"/>`:"👦"}</div><div><div class="h">Najman Pre Primary School</div><div class="n">${s.name}</div><div class="c">${s.class_name}</div></div></div><div class="meta">${s.dob?`D.O.B: ${s.dob}<br/>`:""}Adm No: <span class="adm">${s.admission_no||"—"}</span>${s.admission_date?`<br/>Registered: ${s.admission_date}`:""}</div><div class="ft">KISHILI • MWANZA<br/><span class="fy">Year ${year}</span></div><div class="ico">🎓</div></div>`).join("")}
     </div></body></html>`);
     w.document.close(); setTimeout(()=>w.print(),800);
   };
@@ -2785,19 +2785,22 @@ function Cards({db,user}){
             <div key={s.id} style={{width:236,height:144,background:"linear-gradient(135deg,#0b1120 60%,#1a3a6a)",borderRadius:11,padding:12,color:"#fff",position:"relative",overflow:"hidden",boxShadow:"0 4px 14px rgba(0,0,0,.5)",flexShrink:0}}>
               <div style={{position:"absolute",top:-15,right:-15,width:60,height:60,background:"rgba(245,166,35,.12)",borderRadius:"50%"}}/>
               <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
-                <div style={{width:44,height:44,borderRadius:8,background:"rgba(255,255,255,.1)",border:"1.5px solid rgba(245,166,35,.5)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>
+                <div style={{width:40,height:40,borderRadius:8,background:"rgba(255,255,255,.1)",border:"1.5px solid rgba(245,166,35,.5)",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>
                   {s.photo_url?<img src={s.photo_url} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:"👦"}
                 </div>
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:11,letterSpacing:2,color:"#3b82f6",textTransform:"uppercase",marginBottom:4}}>Najman Pre Primary School</div>
-                  <div style={{fontSize:15,fontWeight:900}}>{s.name}</div>
-                  <div style={{fontSize:15,color:C.textSoft}}>{s.class_name}</div>
+                  <div style={{fontSize:8,letterSpacing:1.5,color:"#3b82f6",textTransform:"uppercase",marginBottom:3}}>Najman Pre Primary School</div>
+                  <div style={{fontSize:13,fontWeight:900,lineHeight:1.15}}>{s.name}</div>
+                  <div style={{fontSize:10,color:C.textSoft}}>{s.class_name}</div>
                 </div>
               </div>
-              {s.parent&&<div style={{fontSize:15,color:C.textSoft,marginTop:2}}>Parent: {s.parent}</div>}
-              <div style={{fontSize:15,color:C.accent,marginTop:6}}>ID: {String(s.id).slice(0,8).toUpperCase()}</div>
-              <div style={{position:"absolute",bottom:8,left:12}}><div style={{fontSize:10,color:C.muted}}>KISHILI • MWANZA</div><div style={{fontSize:15,color:C.accent,fontWeight:700}}>Year {year}</div></div>
-              <div style={{position:"absolute",bottom:5,right:12,fontSize:24,opacity:.22}}>🎓</div>
+              <div style={{fontSize:8.5,color:C.textSoft,marginTop:5,lineHeight:1.5}}>
+                {s.dob&&<div>D.O.B: {s.dob}</div>}
+                <div>Adm No: <span style={{color:C.accent,fontWeight:700}}>{s.admission_no||"—"}</span></div>
+                {s.admission_date&&<div>Registered: {s.admission_date}</div>}
+              </div>
+              <div style={{position:"absolute",bottom:8,left:12}}><div style={{fontSize:8,color:C.muted}}>KISHILI • MWANZA</div><div style={{fontSize:11,color:C.accent,fontWeight:700}}>Year {year}</div></div>
+              <div style={{position:"absolute",bottom:5,right:12,fontSize:20,opacity:.22}}>🎓</div>
             </div>
           ))}
         </div>
