@@ -2702,9 +2702,9 @@ function Certificates({db,user}){
             <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:14,marginBottom:4}}>
               <img src={SCHOOL_LOGO_CERT} style={{width:130,height:130,objectFit:"contain"}}/>
               <div style={{textAlign:"left"}}>
-                <div style={{fontSize:14,letterSpacing:2,color:cert.color,textTransform:"uppercase",fontWeight:900,fontFamily:"'Playfair Display',serif"}}>Najman Education Centre</div>
-                <div style={{fontSize:9,color:"#888",letterSpacing:1,marginTop:2}}>Kishili, Mwanza, Tanzania • Tel: +255 742 415 133</div>
-                <div style={{fontSize:9,color:"#888",marginTop:1}}>Motto: "Play Your Part" • P.O. Box 1333</div>
+                <div style={{fontSize:20,letterSpacing:2,color:cert.color,textTransform:"uppercase",fontWeight:900,fontFamily:"'Playfair Display',serif"}}>Najman Education Centre</div>
+                <div style={{fontSize:13,color:"#888",letterSpacing:1,marginTop:4}}>Kishili, Mwanza, Tanzania • Tel: +255 742 415 133</div>
+                <div style={{fontSize:13,color:"#888",marginTop:2}}>Motto: "Play Your Part" • P.O. Box 1333</div>
               </div>
               {student?.photo_url
                 ? <img src={student.photo_url} style={{width:70,height:70,borderRadius:"50%",objectFit:"cover",border:`3px solid ${cert.color}`}}/>
