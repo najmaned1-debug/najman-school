@@ -2592,20 +2592,21 @@ function Certificates({db,user}){
         <g transform="rotate(-8, 140, 80)">
           <rect x="8" y="10" width="264" height="130" rx="3" fill="none" stroke="#1a56db" strokeWidth="3"/>
           <rect x="13" y="15" width="254" height="120" rx="2" fill="none" stroke="#1a56db" strokeWidth="1.2"/>
-          <text x="140" y="52" textAnchor="middle" fontSize="28" fontWeight="700" fontFamily="'Caveat',cursive" fill="#1a56db" letterSpacing="2">PRINCIPAL</text>
-          <line x1="18" y1="62" x2="262" y2="62" stroke="#1a56db" strokeWidth="1.5"/>
-          <text x="140" y="88" textAnchor="middle" fontSize="21" fontWeight="700" fontFamily="'Caveat',cursive" fill="#1a56db">NAJMAN EDUCATION CENTRE</text>
-          <text x="140" y="112" textAnchor="middle" fontSize="16" fontFamily="'Caveat',cursive" fill="#1a56db">P.O. BOX 1333 - MWANZA</text>
+          <text x="140" y="46" textAnchor="middle" fontSize="24" fontWeight="700" fontFamily="'Caveat',cursive" fill="#1a56db" letterSpacing="2">PRINCIPAL</text>
+          <line x1="18" y1="56" x2="262" y2="56" stroke="#1a56db" strokeWidth="1.5"/>
+          <text x="140" y="80" textAnchor="middle" fontSize="18" fontWeight="700" fontFamily="'Caveat',cursive" fill="#1a56db">NAJMAN EDUCATION CENTRE</text>
+          <text x="140" y="101" textAnchor="middle" fontSize="14" fontFamily="'Caveat',cursive" fill="#1a56db">P.O. BOX 1333 - MWANZA</text>
+          <text x="140" y="124" textAnchor="middle" fontSize="15" fontWeight="700" fontFamily="'Caveat',cursive" fill="#1a56db">{new Date().toLocaleDateString("en-GB")}</text>
         </g>
       </svg>;
 
   const SigBlock = ({img,name,title}) => <div style={{textAlign:"center",minWidth:160}}>
-    <div style={{fontSize:12,fontWeight:900,fontFamily:"'Playfair Display',serif",color:"#1a1a1a",marginBottom:1}}>{name}</div>
-    <div style={{fontSize:10,color:"#555",fontStyle:"italic",marginBottom:4}}>{title}</div>
-    <div style={{height:40,display:"flex",alignItems:"flex-end",justifyContent:"center",marginBottom:2}}>
-      {img&&<img src={img} style={{maxHeight:38,maxWidth:150,objectFit:"contain"}}/>}
+    <div style={{height:38,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+      {img&&<img src={img} style={{maxHeight:36,maxWidth:150,objectFit:"contain"}}/>}
     </div>
+    <div style={{fontSize:12,fontWeight:900,fontFamily:"'Playfair Display',serif",color:"#1a1a1a",marginBottom:1}}>{name}</div>
     <div style={{borderTop:"2px solid #333",width:150,margin:"0 auto"}}/>
+    <div style={{fontSize:10,color:"#555",fontStyle:"italic",marginTop:3}}>{title}</div>
   </div>;
 
   const print = () => {
@@ -2722,7 +2723,6 @@ function Certificates({db,user}){
             <div style={{textAlign:"center"}}>
               <Stamp img={stampImg} size={145}/>
               <div style={{fontSize:9,color:cert.color,fontWeight:900,letterSpacing:1,marginTop:2}}>MUHURI WA SHULE</div>
-              <div style={{fontSize:9,color:"#888"}}>{new Date().toLocaleDateString("en-GB")}</div>
             </div>
             <SigBlock img={null} name={`${year}`} title="Academic Year"/>
           </div>
