@@ -2688,9 +2688,9 @@ function Certificates({db,user}){
           )}
 
           {/* Header */}
-          <div style={{textAlign:"center",marginBottom:10}}>
+          <div style={{textAlign:"center",marginBottom:14}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:14,marginBottom:4}}>
-              <img src={SCHOOL_LOGO} style={{width:92,height:92,objectFit:"contain"}}/>
+              <img src={SCHOOL_LOGO} style={{width:130,height:130,objectFit:"contain"}}/>
               <div style={{textAlign:"left"}}>
                 <div style={{fontSize:14,letterSpacing:2,color:cert.color,textTransform:"uppercase",fontWeight:900,fontFamily:"'Playfair Display',serif"}}>Najman Education Centre</div>
                 <div style={{fontSize:9,color:"#888",letterSpacing:1,marginTop:2}}>Kishili, Mwanza, Tanzania • Tel: +255 742 415 133</div>
@@ -2720,7 +2720,7 @@ function Certificates({db,user}){
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:18,paddingTop:12,borderTop:`1px solid ${cert.color}44`}}>
             <SigBlock img={sigImg} name={principal} title="Head Teacher / Principal"/>
             <div style={{textAlign:"center"}}>
-              <Stamp img={stampImg} size={110}/>
+              <Stamp img={stampImg} size={145}/>
               <div style={{fontSize:9,color:cert.color,fontWeight:900,letterSpacing:1,marginTop:2}}>MUHURI WA SHULE</div>
               <div style={{fontSize:9,color:"#888"}}>{new Date().toLocaleDateString("en-GB")}</div>
             </div>
