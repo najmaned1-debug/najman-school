@@ -1135,9 +1135,14 @@ function Students({db,user}) {
     </div>
     {loading?<Spinner/>:<div className="card">
       <table className="table">
-        <thead><tr>{["#","Name","Class","Parent","Phone","Fee",""].map(h=><th key={h}>{h}</th>)}</tr></thead>
+        <thead><tr>{["#","Photo","Name","Class","Parent","Phone","Fee",""].map(h=><th key={h}>{h}</th>)}</tr></thead>
         <tbody>{filtered.map((s,i)=><tr key={s.id}>
           <td>{i+1}</td>
+          <td>
+            <div style={{width:36,height:36,borderRadius:"50%",overflow:"hidden",background:"linear-gradient(135deg,#1a3a6a,#f5a623)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>
+              {s.photo_url?<img src={s.photo_url} style={{width:36,height:36,objectFit:"cover"}}/>:"👦"}
+            </div>
+          </td>
           <td className="fw-700">{s.name}</td>
           <td>{badge(C.blue,s.class_name)}</td>
           <td>{s.parent||"—"}</td>
@@ -4195,7 +4200,8 @@ function StudentProfile({db,user}){
   },[sel]);
 
   const save=async()=>{
-    await db.from("students").update(form).eq("id",sel.id);
+    const {error:updErr}=await db.from("students").update(form).eq("id",sel.id);
+    if(updErr){ alert("Error updating student: "+updErr.message); return; }
     setModal(false);
     setSel({...sel,...form});
   };
@@ -4291,9 +4297,34 @@ function StudentProfile({db,user}){
     </div>}
     {modal&&<div className="overlay"><div className="modal" style={{width:500}}>
       <div style={{fontWeight:900,fontSize:16,marginBottom:14,fontFamily:"'Playfair Display',serif"}}>Edit Student Profile</div>
+      {/* Photo Upload */}
+      <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:14,padding:"12px 14px",background:"#151d30",borderRadius:12,border:"1px solid #1f2e47"}}>
+        <div style={{width:80,height:80,borderRadius:"50%",background:"linear-gradient(135deg,#1a3a6a,#f5a623)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,overflow:"hidden",border:"3px solid #f5a623",flexShrink:0}}>
+          {form.photo_url?<img src={form.photo_url} style={{width:80,height:80,objectFit:"cover"}}/>:"👦"}
+        </div>
+        <div style={{flex:1}}>
+          <div style={{fontWeight:800,fontSize:13,marginBottom:8,color:C.text}}>Student Photo</div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            <label style={{cursor:"pointer"}}>
+              <span className="btn-ghost" style={{fontSize:12,padding:"7px 14px",display:"block"}}>🖼️ Gallery</span>
+              <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                const file=e.target.files[0];if(!file)return;
+                const r=new FileReader();r.onload=ev=>F("photo_url",ev.target.result);r.readAsDataURL(file);
+              }}/>
+            </label>
+            <label style={{cursor:"pointer"}}>
+              <span className="btn-ghost" style={{fontSize:12,padding:"7px 14px",display:"block"}}>📷 Camera</span>
+              <input type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>{
+                const file=e.target.files[0];if(!file)return;
+                const r=new FileReader();r.onload=ev=>F("photo_url",ev.target.result);r.readAsDataURL(file);
+              }}/>
+            </label>
+            {form.photo_url&&<button className="btn-ghost" style={{fontSize:12,padding:"7px 14px",color:C.red,borderColor:C.red}} onClick={()=>F("photo_url","")}>✕ Delete</button>}
+          </div>
+        </div>
+      </div>
       <div className="grid-2">
         <div className="grid-full"><label className="label">Full Name</label><input className="input" value={form.name||""} onChange={e=>F("name",e.target.value)}/></div>
-        <div><label className="label">Photo URL</label><input className="input" value={form.photo_url||""} onChange={e=>F("photo_url",e.target.value)} placeholder="https://..."/></div>
         <div><label className="label">Gender</label><select className="input" value={form.gender||"Male"} onChange={e=>F("gender",e.target.value)}><option>Male</option><option>Female</option></select></div>
         <div><label className="label">Date of Birth</label><input className="input" type="date" value={form.dob||""} onChange={e=>F("dob",e.target.value)}/></div>
         <div><label className="label">Class</label><select className="input" value={form.class_name||""} onChange={e=>F("class_name",e.target.value)}>{classes.map(c=><option key={c.id}>{c.name}</option>)}</select></div>
