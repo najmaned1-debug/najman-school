@@ -5454,15 +5454,70 @@ function Reports({db,user}){
 // ── V4.0: SETTINGS IMPROVED ──────────────────────────
 function Settings({db,user,setPage}){
   const role=user?.profile?.role||"admin";
-  if(role==="teacher") return <div className="card" style={{textAlign:"center",padding:48}}>
-    <div style={{fontSize:48,marginBottom:12}}>🔒</div>
-    <div style={{fontWeight:900,fontSize:18,marginBottom:8,color:"#dc2626"}}>Access Denied</div>
-    <div style={{color:"#64748b",fontSize:14}}>Settings are only available to Admin.<br/>Please contact your system administrator.</div>
-  </div>;
   const [tab,setTab]=useState("school");
   const [cfg,setCfg]=useState({school_name:"Najman Education Centre",school_phone:"+255 742 415 133",school_address:"Kishili, Mwanza, Tanzania",school_email:"",school_motto:"Play Your Part",po_box:"P.O. Box 1333",academic_year:"2026",current_term:"Term 1"});
   const [saved,setSaved]=useState(false);
   const [sender,setSender]=useState(()=>localStorage.getItem("nextsms_sender")||"");
+
+  // Account (Change Password / Email) state
+  const [newEmail,setNewEmail]=useState(user?.email||"");
+  const [curPass,setCurPass]=useState("");
+  const [newPass,setNewPass]=useState("");
+  const [confirmPass,setConfirmPass]=useState("");
+  const [acctMsg,setAcctMsg]=useState(null); // {type:'ok'|'err', text:''}
+  const [acctBusy,setAcctBusy]=useState(false);
+
+  const changePassword=async()=>{
+    setAcctMsg(null);
+    if(!curPass){ setAcctMsg({type:"err",text:"Please enter your current password."}); return; }
+    if(newPass.length<6){ setAcctMsg({type:"err",text:"New password must be at least 6 characters."}); return; }
+    if(newPass!==confirmPass){ setAcctMsg({type:"err",text:"New password and confirmation do not match."}); return; }
+    setAcctBusy(true);
+    // Re-verify current password first (Supabase requires re-auth for sensitive changes on some setups)
+    const {error:verifyErr}=await db.auth.signInWithPassword({email:user.email,password:curPass});
+    if(verifyErr){ setAcctBusy(false); setAcctMsg({type:"err",text:"Current password is incorrect."}); return; }
+    const {error}=await db.auth.updateUser({password:newPass});
+    setAcctBusy(false);
+    if(error){ setAcctMsg({type:"err",text:"Error: "+error.message}); return; }
+    setAcctMsg({type:"ok",text:"✅ Password updated successfully!"});
+    setCurPass("");setNewPass("");setConfirmPass("");
+  };
+
+  const changeEmail=async()=>{
+    setAcctMsg(null);
+    if(!newEmail||!newEmail.includes("@")){ setAcctMsg({type:"err",text:"Please enter a valid email address."}); return; }
+    if(newEmail===user.email){ setAcctMsg({type:"err",text:"This is already your current email."}); return; }
+    setAcctBusy(true);
+    const {error}=await db.auth.updateUser({email:newEmail});
+    setAcctBusy(false);
+    if(error){ setAcctMsg({type:"err",text:"Error: "+error.message}); return; }
+    setAcctMsg({type:"ok",text:"✅ Confirmation link sent to both old and new email. Please check your inbox to confirm the change."});
+  };
+
+  if(role==="teacher") return <div>
+    <div className="card">
+      <div style={{fontWeight:800,marginBottom:14,color:C.accent,fontSize:15}}>👤 My Account</div>
+      <div className="grid-2">
+        <div className="grid-full"><Field label="Email Address" value={newEmail} onChange={setNewEmail} type="email"/></div>
+        <div className="grid-full">
+          {acctMsg&&<div className={acctMsg.type==="ok"?"success-box":"error-box"} style={{marginBottom:10}}>{acctMsg.text}</div>}
+          <button className="btn" disabled={acctBusy} onClick={changeEmail}>{acctBusy?"⏳ Please wait...":"📧 Update Email"}</button>
+        </div>
+      </div>
+    </div>
+    <div className="card" style={{marginTop:14}}>
+      <div style={{fontWeight:800,marginBottom:14,color:C.accent,fontSize:15}}>🔒 Change Password</div>
+      <div className="grid-2">
+        <div className="grid-full"><Field label="Current Password" value={curPass} onChange={setCurPass} type="password"/></div>
+        <div><Field label="New Password" value={newPass} onChange={setNewPass} type="password"/></div>
+        <div className="grid-full"><Field label="Confirm New Password" value={confirmPass} onChange={setConfirmPass} type="password"/></div>
+        <div className="grid-full">
+          {acctMsg&&<div className={acctMsg.type==="ok"?"success-box":"error-box"} style={{marginBottom:10}}>{acctMsg.text}</div>}
+          <button className="btn" disabled={acctBusy} onClick={changePassword}>{acctBusy?"⏳ Please wait...":"🔒 Update Password"}</button>
+        </div>
+      </div>
+    </div>
+  </div>;
 
   useEffect(()=>{db.from("settings").select("*").eq("id",1).single().then(({data})=>{if(data)setCfg(p=>({...p,...data}));});},[]);
 
@@ -5480,7 +5535,7 @@ function Settings({db,user,setPage}){
       </div>
     </div>
     <div className="flex gap-6 mb-14 flex-wrap">
-      {[["school","🏫 School"],["academic","🎓 Academic"],["edge","⚡ Edge Functions"],["system","🔧 System"]].map(([id,lbl])=>(
+      {[["school","🏫 School"],["academic","🎓 Academic"],["account","👤 Account"],["edge","⚡ Edge Functions"],["system","🔧 System"]].map(([id,lbl])=>(
         <button key={id} className={`tab-btn ${tab===id?"active":""}`} onClick={()=>setTab(id)}>{lbl}</button>
       ))}
     </div>
@@ -5500,6 +5555,30 @@ function Settings({db,user,setPage}){
       <div className="grid-2">
         <div><Select label="Academic Year" value={cfg.academic_year} onChange={v=>setCfg(c=>({...c,academic_year:v}))} options={["2024","2025","2026","2027","2028"]}/></div>
         <div><Select label="Current Term" value={cfg.current_term} onChange={v=>setCfg(c=>({...c,current_term:v}))} options={TERMS}/></div>
+      </div>
+    </div>}
+    {tab==="account"&&<div>
+      <div className="card">
+        <div style={{fontWeight:800,marginBottom:6,color:C.accent,fontSize:15}}>👤 My Account</div>
+        <div style={{fontSize:12,color:C.muted,marginBottom:14}}>Signed in as <strong style={{color:C.text}}>{user?.email}</strong></div>
+        <div className="grid-2">
+          <div className="grid-full"><Field label="Email Address" value={newEmail} onChange={setNewEmail} type="email"/></div>
+          <div className="grid-full">
+            <button className="btn" disabled={acctBusy} onClick={changeEmail}>{acctBusy?"⏳ Please wait...":"📧 Update Email"}</button>
+          </div>
+        </div>
+      </div>
+      <div className="card" style={{marginTop:14}}>
+        <div style={{fontWeight:800,marginBottom:14,color:C.accent,fontSize:15}}>🔒 Change Password</div>
+        <div className="grid-2">
+          <div className="grid-full"><Field label="Current Password" value={curPass} onChange={setCurPass} type="password"/></div>
+          <div><Field label="New Password" value={newPass} onChange={setNewPass} type="password"/></div>
+          <div><Field label="Confirm New Password" value={confirmPass} onChange={setConfirmPass} type="password"/></div>
+          <div className="grid-full">
+            {acctMsg&&<div className={acctMsg.type==="ok"?"success-box":"error-box"} style={{marginBottom:10}}>{acctMsg.text}</div>}
+            <button className="btn" disabled={acctBusy} onClick={changePassword}>{acctBusy?"⏳ Please wait...":"🔒 Update Password"}</button>
+          </div>
+        </div>
       </div>
     </div>}
     {tab==="edge"&&<div>
