@@ -5459,8 +5459,56 @@ function Settings({db,user,setPage}){
   const [saved,setSaved]=useState(false);
   const [sender,setSender]=useState(()=>localStorage.getItem("nextsms_sender")||"");
 
-  // Account (Change Password / Email) state
-  const [newEmail,setNewEmail]=useState(user?.email||"");
+  // Admin: reset teacher password & activity log
+  const [teacherList,setTeacherList]=useState([]);
+  const [resetTeacherId,setResetTeacherId]=useState("");
+  const [resetPass,setResetPass]=useState("");
+  const [resetMsg,setResetMsg]=useState(null);
+  const [resetBusy,setResetBusy]=useState(false);
+  const [logs,setLogs]=useState([]);
+  const [logsLoading,setLogsLoading]=useState(true);
+
+  useEffect(()=>{
+    if(role!=="admin")return;
+    (async()=>{
+      const {data:staffData}=await db.from("staff").select("id,name,email").eq("status","Active").not("email","is",null);
+      setTeacherList(staffData||[]);
+      const {data:logData}=await db.from("account_logs").select("*").order("created_at",{ascending:false}).limit(50);
+      setLogs(logData||[]);
+      setLogsLoading(false);
+    })();
+  },[role]);
+
+  const resetTeacherPassword=async()=>{
+    setResetMsg(null);
+    if(!resetTeacherId){ setResetMsg({type:"err",text:"Please select a teacher."}); return; }
+    if(resetPass.length<6){ setResetMsg({type:"err",text:"New password must be at least 6 characters."}); return; }
+    setResetBusy(true);
+    const teacher=teacherList.find(t=>t.id===resetTeacherId);
+    try{
+      const {data:sessionData}=await db.auth.getSession();
+      const resp=await fetch(`${SUPA_URL}/functions/v1/admin-reset-password`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json","Authorization":`Bearer ${sessionData?.session?.access_token}`},
+        body:JSON.stringify({teacher_email:teacher.email,new_password:resetPass}),
+      });
+      const result=await resp.json();
+      setResetBusy(false);
+      if(!resp.ok){ setResetMsg({type:"err",text:"Error: "+(result.error||"Failed to reset password")}); return; }
+      await db.from("account_logs").insert({
+        user_email: teacher.email,
+        user_name: teacher.name,
+        action: "password_reset",
+        changed_by: getUserName(user)+" (Admin)",
+      });
+      setLogs(l=>[{user_email:teacher.email,user_name:teacher.name,action:"password_reset",changed_by:getUserName(user)+" (Admin)",created_at:new Date().toISOString()},...l]);
+      setResetMsg({type:"ok",text:`✅ Password for ${teacher.name} reset to: ${resetPass}\n\nPlease share this with them securely.`});
+      setResetPass("");setResetTeacherId("");
+    }catch(err){
+      setResetBusy(false);
+      setResetMsg({type:"err",text:"Network error: "+err.message});
+    }
+  };
   const [curPass,setCurPass]=useState("");
   const [newPass,setNewPass]=useState("");
   const [confirmPass,setConfirmPass]=useState("");
@@ -5479,31 +5527,23 @@ function Settings({db,user,setPage}){
     const {error}=await db.auth.updateUser({password:newPass});
     setAcctBusy(false);
     if(error){ setAcctMsg({type:"err",text:"Error: "+error.message}); return; }
+    // Log this event for admin visibility
+    await db.from("account_logs").insert({
+      user_email: user.email,
+      user_name: getUserName(user),
+      action: "password_change",
+      changed_by: "self",
+    });
     setAcctMsg({type:"ok",text:"✅ Password updated successfully!"});
     setCurPass("");setNewPass("");setConfirmPass("");
-  };
-
-  const changeEmail=async()=>{
-    setAcctMsg(null);
-    if(!newEmail||!newEmail.includes("@")){ setAcctMsg({type:"err",text:"Please enter a valid email address."}); return; }
-    if(newEmail===user.email){ setAcctMsg({type:"err",text:"This is already your current email."}); return; }
-    setAcctBusy(true);
-    const {error}=await db.auth.updateUser({email:newEmail});
-    setAcctBusy(false);
-    if(error){ setAcctMsg({type:"err",text:"Error: "+error.message}); return; }
-    setAcctMsg({type:"ok",text:"✅ Confirmation link sent to both old and new email. Please check your inbox to confirm the change."});
   };
 
   if(role==="teacher") return <div>
     <div className="card">
       <div style={{fontWeight:800,marginBottom:14,color:C.accent,fontSize:15}}>👤 My Account</div>
-      <div className="grid-2">
-        <div className="grid-full"><Field label="Email Address" value={newEmail} onChange={setNewEmail} type="email"/></div>
-        <div className="grid-full">
-          {acctMsg&&<div className={acctMsg.type==="ok"?"success-box":"error-box"} style={{marginBottom:10}}>{acctMsg.text}</div>}
-          <button className="btn" disabled={acctBusy} onClick={changeEmail}>{acctBusy?"⏳ Please wait...":"📧 Update Email"}</button>
-        </div>
-      </div>
+      <div style={{fontSize:12,color:C.muted,marginBottom:6}}>Signed in as</div>
+      <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:4}}>{user?.email}</div>
+      <div style={{fontSize:11,color:C.muted}}>To change your email address, please contact the school administrator.</div>
     </div>
     <div className="card" style={{marginTop:14}}>
       <div style={{fontWeight:800,marginBottom:14,color:C.accent,fontSize:15}}>🔒 Change Password</div>
@@ -5560,25 +5600,53 @@ function Settings({db,user,setPage}){
     {tab==="account"&&<div>
       <div className="card">
         <div style={{fontWeight:800,marginBottom:6,color:C.accent,fontSize:15}}>👤 My Account</div>
-        <div style={{fontSize:12,color:C.muted,marginBottom:14}}>Signed in as <strong style={{color:C.text}}>{user?.email}</strong></div>
-        <div className="grid-2">
-          <div className="grid-full"><Field label="Email Address" value={newEmail} onChange={setNewEmail} type="email"/></div>
-          <div className="grid-full">
-            <button className="btn" disabled={acctBusy} onClick={changeEmail}>{acctBusy?"⏳ Please wait...":"📧 Update Email"}</button>
-          </div>
-        </div>
+        <div style={{fontSize:12,color:C.muted,marginBottom:4}}>Signed in as</div>
+        <div style={{fontSize:16,fontWeight:800,color:C.text}}>{user?.email}</div>
       </div>
       <div className="card" style={{marginTop:14}}>
-        <div style={{fontWeight:800,marginBottom:14,color:C.accent,fontSize:15}}>🔒 Change Password</div>
+        <div style={{fontWeight:800,marginBottom:14,color:C.accent,fontSize:15}}>🔒 Change My Password</div>
         <div className="grid-2">
           <div className="grid-full"><Field label="Current Password" value={curPass} onChange={setCurPass} type="password"/></div>
           <div><Field label="New Password" value={newPass} onChange={setNewPass} type="password"/></div>
           <div><Field label="Confirm New Password" value={confirmPass} onChange={setConfirmPass} type="password"/></div>
           <div className="grid-full">
-            {acctMsg&&<div className={acctMsg.type==="ok"?"success-box":"error-box"} style={{marginBottom:10}}>{acctMsg.text}</div>}
+            {acctMsg&&<div className={acctMsg.type==="ok"?"success-box":"error-box"} style={{marginBottom:10,whiteSpace:"pre-line"}}>{acctMsg.text}</div>}
             <button className="btn" disabled={acctBusy} onClick={changePassword}>{acctBusy?"⏳ Please wait...":"🔒 Update Password"}</button>
           </div>
         </div>
+      </div>
+
+      <div className="card" style={{marginTop:14,background:"rgba(245,166,35,.06)",border:"1px solid rgba(245,166,35,.3)"}}>
+        <div style={{fontWeight:800,marginBottom:6,color:C.accent,fontSize:15}}>🔑 Reset Teacher Password</div>
+        <div style={{fontSize:12,color:C.textSoft,marginBottom:14}}>Set a new password for a teacher's account. They will need to use this new password to log in.</div>
+        <div className="grid-2">
+          <div className="grid-full">
+            <label className="label">Select Teacher</label>
+            <select className="input" value={resetTeacherId} onChange={e=>setResetTeacherId(e.target.value)}>
+              <option value="">-- Select --</option>
+              {teacherList.map(t=><option key={t.id} value={t.id}>{t.name} ({t.email})</option>)}
+            </select>
+          </div>
+          <div className="grid-full"><Field label="New Password" value={resetPass} onChange={setResetPass} type="text"/></div>
+          <div className="grid-full">
+            {resetMsg&&<div className={resetMsg.type==="ok"?"success-box":"error-box"} style={{marginBottom:10,whiteSpace:"pre-line"}}>{resetMsg.text}</div>}
+            <button className="btn" disabled={resetBusy} onClick={resetTeacherPassword}>{resetBusy?"⏳ Please wait...":"🔑 Reset Password"}</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="card" style={{marginTop:14}}>
+        <div style={{fontWeight:800,marginBottom:12,color:C.accent,fontSize:15}}>📋 Account Activity Log</div>
+        {logsLoading?<Spinner/>:logs.length===0?<div style={{color:C.muted,fontSize:13}}>No account changes recorded yet.</div>:
+        <table className="table">
+          <thead><tr><th>Date</th><th>User</th><th>Action</th><th>By</th></tr></thead>
+          <tbody>{logs.map((l,i)=><tr key={i}>
+            <td style={{fontSize:12}}>{new Date(l.created_at).toLocaleString("en-GB",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}</td>
+            <td className="fw-700">{l.user_name}<div style={{fontSize:10,color:C.muted}}>{l.user_email}</div></td>
+            <td>{badge(l.action==="password_reset"?C.orange:C.blue, l.action==="password_reset"?"Password Reset":"Password Changed")}</td>
+            <td style={{fontSize:12,color:C.textSoft}}>{l.changed_by}</td>
+          </tr>)}</tbody>
+        </table>}
       </div>
     </div>}
     {tab==="edge"&&<div>
