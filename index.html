@@ -917,14 +917,14 @@ function App() {
     });
     db.auth.onAuthStateChange((e,s) => { if(e==="SIGNED_OUT"){setUser(null);setPage("home");setPageHistory([]);} });
 
-    // ── AUTO LOGOUT after 30 minutes of inactivity ──────
+    // ── AUTO LOGOUT after 15 minutes of inactivity ──────
     let timer;
     const resetTimer = () => {
       clearTimeout(timer);
       timer = setTimeout(async() => {
         await db.auth.signOut();
-        alert("⏰ Session expired after 30 minutes of inactivity. Please log in again.");
-      }, 30 * 60 * 1000); // 30 minutes
+        alert("⏰ Session expired after 15 minutes of inactivity. Please log in again.");
+      }, 15 * 60 * 1000); // 15 minutes
     };
     ["mousedown","mousemove","keypress","scroll","touchstart","click"].forEach(e =>
       document.addEventListener(e, resetTimer, true)
