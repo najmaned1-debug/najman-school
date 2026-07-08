@@ -1168,6 +1168,7 @@ function Students({db,user}) {
       )}>📄 PDF</button>
     </div>
     {loading?<Spinner/>:<div className="card">
+      <div className="table-responsive">
       <table className="table">
         <thead><tr>{["#","Photo","Name","Class","Parent","Phone","Fee",""].map(h=><th key={h}>{h}</th>)}</tr></thead>
         <tbody>{filtered.map((s,i)=><tr key={s.id}>
@@ -1177,12 +1178,12 @@ function Students({db,user}) {
               {s.photo_url?<img src={s.photo_url} style={{width:36,height:36,objectFit:"cover"}}/>:"👦"}
             </div>
           </td>
-          <td className="fw-700">{s.name}</td>
-          <td>{badge(C.blue,s.class_name)}</td>
-          <td>{s.parent||"—"}</td>
-          <td>{s.phone||"—"}</td>
-          <td className="text-accent fw-700">{Number(s.term_fee||0).toLocaleString()}</td>
-          <td>
+          <td className="fw-700" style={{whiteSpace:"nowrap"}}>{s.name}</td>
+          <td style={{whiteSpace:"nowrap"}}>{badge(C.blue,s.class_name)}</td>
+          <td style={{whiteSpace:"nowrap"}}>{s.parent||"—"}</td>
+          <td style={{whiteSpace:"nowrap"}}>{s.phone||"—"}</td>
+          <td className="text-accent fw-700" style={{whiteSpace:"nowrap"}}>{Number(s.term_fee||0).toLocaleString()}</td>
+          <td style={{whiteSpace:"nowrap"}}>
             {badge(s.status==="Active"?C.green:s.status==="Left"?C.red:C.blue, s.status)}
             <button className="btn-ghost" style={{padding:"3px 7px",marginRight:3,fontSize:15}} onClick={()=>{setForm({...s,term_fee:String(s.term_fee||0)});setEditId(s.id);setModal(true);}}>✏️</button>
             {s.status==="Active"&&<button className="btn btn-red" style={{padding:"3px 7px",fontSize:15,marginRight:3}} onClick={()=>del(s.id)}>⏸️</button>}
@@ -1191,6 +1192,7 @@ function Students({db,user}) {
           </td>
         </tr>)}</tbody>
       </table>
+      </div>
       {filtered.length===0&&<div style={{padding:16,color:C.muted,textAlign:"center"}}>No students found</div>}
     </div>}
     {modal&&<div className="overlay"><div className="modal" style={{width:540}}>
