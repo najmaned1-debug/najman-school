@@ -2516,7 +2516,7 @@ async function sendSMS(phone,message){
         status:ok?"sent":"failed",
         error_detail:errDetail,
         sent_at:new Date().toISOString()
-      }).then(()=>{}).catch(()=>{});
+      }).then(({error:logErr})=>{ if(logErr) console.error("sms_log insert failed:",logErr.message); }).catch(e=>console.error("sms_log insert exception:",e.message));
       return {ok,status:data?.status,body:JSON.stringify(data?.body||data),error:errDetail};
     }catch(e){
       console.error(`SMS attempt ${attempt} exception:`,e);
@@ -2562,9 +2562,6 @@ function BulkSMS({db,user}){
 
   return <div>
     <div style={{fontSize:21,fontWeight:900,fontFamily:"'Playfair Display',serif",marginBottom:18}}>💬 Bulk SMS</div>
-    <div className="card mb-12" style={{background:"rgba(245,166,35,.08)",border:"1px solid rgba(245,166,35,.35)",padding:"8px 12px"}}>
-      <span style={{fontSize:13,color:C.accent,fontWeight:700}}>⏳ Sender ID "NAJMAN" still pending with NextSMS</span> <span style={{fontSize:13,color:C.textSoft}}>— baadhi ya SMS zinaweza kushindwa. Angalia SMS History kwa sababu.</span>
-    </div>
     <div className="card mb-12">
       <label className="label">Message</label>
       <textarea className="input" style={{height:80,resize:"vertical"}} value={message} onChange={e=>setMessage(e.target.value)} placeholder="Type your message..."/>
@@ -5430,7 +5427,10 @@ function SmsLog({db,user}){
   const [fStatus,setFStatus]=useState("All");
 
   useEffect(()=>{
-    db.from("sms_log").select("*").order("created_at",{ascending:false}).limit(200).then(({data})=>{setLogs(data||[]);setLoading(false);});
+    db.from("sms_log").select("*").order("sent_at",{ascending:false}).limit(200).then(({data,error})=>{
+      if(error){ console.error("SMS Log fetch error:",error.message); }
+      setLogs(data||[]);setLoading(false);
+    });
   },[]);
 
   const filtered=logs.filter(l=>(fStatus==="All"||l.status===fStatus)&&(l.recipient_name?.toLowerCase().includes(search.toLowerCase())||l.phone?.includes(search)||l.message?.toLowerCase().includes(search.toLowerCase())));
