@@ -28,6 +28,8 @@ input,select,textarea{font-family:'Nunito',sans-serif;font-weight:700;}
   .sidebar.open{transform:translateX(0);}
   .main{margin-left:0!important;padding:12px!important;}
   .hamburger{display:flex!important;}
+  .table{font-size:11px;}
+  .table th,.table td{padding:8px 6px;}
 }
 
 /* NAV */
@@ -1178,7 +1180,7 @@ function Students({db,user}) {
               {s.photo_url?<img src={s.photo_url} style={{width:36,height:36,objectFit:"cover"}}/>:"👦"}
             </div>
           </td>
-          <td className="fw-700" style={{whiteSpace:"nowrap"}}>{s.name}</td>
+          <td className="fw-700" style={{whiteSpace:"nowrap",minWidth:140}}>{s.name}</td>
           <td style={{whiteSpace:"nowrap"}}>{badge(C.blue,s.class_name)}</td>
           <td style={{whiteSpace:"nowrap"}}>{s.parent||"—"}</td>
           <td style={{whiteSpace:"nowrap"}}>{s.phone||"—"}</td>
