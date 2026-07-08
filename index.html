@@ -275,6 +275,32 @@ function Field({label, value, onChange, type="text", placeholder=""}) {
   </div>;
 }
 
+// PhoneField: fixed +255 country code prefix, user types only the local 9 digits.
+// Stores/returns the full number as "255XXXXXXXXX" (no + or spaces) for SMS/DB consistency.
+function PhoneField({label="Phone", value, onChange, placeholder="7XX XXX XXX"}) {
+  // Strip any leading 255/+255/0 so the input only ever shows the local part
+  const local = (value||"").replace(/\D/g,"").replace(/^255/,"").replace(/^0/,"");
+  return <div className="mb-12">
+    <label className="label">{label}</label>
+    <div style={{display:"flex",alignItems:"stretch"}}>
+      <div style={{display:"flex",alignItems:"center",padding:"0 12px",background:"#0d1526",border:"1.5px solid #263449",borderRight:"none",borderRadius:"10px 0 0 10px",color:C.accent,fontWeight:800,fontSize:14,letterSpacing:0.5}}>+255</div>
+      <input
+        className="input"
+        style={{borderRadius:"0 10px 10px 0"}}
+        type="tel"
+        inputMode="numeric"
+        value={local}
+        placeholder={placeholder}
+        maxLength={9}
+        onChange={e=>{
+          let v=e.target.value.replace(/\D/g,"").replace(/^0/,"").slice(0,9);
+          onChange(v?"255"+v:"");
+        }}
+      />
+    </div>
+  </div>;
+}
+
 function Select({label, value, onChange, options=[]}) {
   return <div className="mb-12">
     <label className="label">{label}</label>
@@ -430,8 +456,9 @@ const NAV = [
 
 // ── LOGIN ──────────────────────────────────────────────
 function Login({onLogin}) {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(()=>localStorage.getItem("najman_remembered_email")||"");
   const [pass, setPass] = useState("");
+  const [remember, setRemember] = useState(()=>!!localStorage.getItem("najman_remembered_email"));
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
@@ -442,6 +469,8 @@ function Login({onLogin}) {
       const {data,error} = await db.auth.signInWithPassword({email, password:pass});
       if(error) throw error;
       const {data:profile} = await db.from("user_profiles").select("*").eq("id",data.user.id).single();
+      if(remember){ localStorage.setItem("najman_remembered_email", email); }
+      else{ localStorage.removeItem("najman_remembered_email"); }
       onLogin({...data.user, profile});
     } catch(e) { setErr(e.message||"Login failed. Check email and password."); }
     setLoading(false);
@@ -460,6 +489,10 @@ function Login({onLogin}) {
         {err && <div className="error-box">{err}</div>}
         <Field label="Email Address" value={email} onChange={setEmail} type="email" placeholder="your@email.com"/>
         <Field label="Password" value={pass} onChange={v=>setPass(v)} type="password" placeholder="••••••••"/>
+        <label style={{display:"flex",alignItems:"center",gap:8,marginTop:4,marginBottom:4,cursor:"pointer",fontSize:13,color:C.textSoft}}>
+          <input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)} style={{width:16,height:16,accentColor:C.accent,cursor:"pointer"}}/>
+          Remember my email
+        </label>
         <button className="btn w-full" style={{padding:"11px",fontSize:15,marginTop:4}} onClick={login} disabled={loading}>
           {loading?"⏳ Signing in...":"🔐 Sign In"}
         </button>
@@ -608,15 +641,7 @@ function TeacherStudentReg({db,user}){
       </select>
     </div>
     <div className="mb-10"><label className="label">Parent/Guardian Name</label><input className="input" value={form.parent} onChange={e=>F("parent",e.target.value)} placeholder="Parent/guardian name"/></div>
-    <div className="mb-10"><label className="label">Parent Phone</label>
-      <input className="input" value={form.phone} placeholder="7XXXXXXXX" onChange={e=>{
-        let v=e.target.value.replace(/\D/g,"");
-        if(v.startsWith("0"))v="255"+v.slice(1);
-        else if(v.startsWith("7")||v.startsWith("6"))v="255"+v;
-        F("phone",v);
-      }}/>
-      {form.phone&&<div style={{fontSize:12,color:C.green,marginTop:3}}>📱 {form.phone}</div>}
-    </div>
+    <PhoneField label="Parent Phone" value={form.phone} onChange={v=>F("phone",v)}/>
     <div className="mb-12"><label className="label">Term Fee (TZS)</label><input className="input" type="number" value={form.term_fee} onChange={e=>F("term_fee",e.target.value)} placeholder="30000"/></div>
     <button className="btn btn-orange w-full" onClick={save} disabled={saving}>{saving?"⏳ Registering...":"✅ Register Student"}</button>
   </div>;
@@ -1203,8 +1228,8 @@ function Students({db,user}) {
         <div className="grid-full"><Field label="Home Address / Street" value={form.home_address||""} onChange={v=>F("home_address",v)}/></div>
         <div className="grid-full"><Field label="Previous School" value={form.previous_school||""} onChange={v=>F("previous_school",v)}/></div>
         <div><Field label="Parent/Guardian Name" value={form.parent} onChange={v=>F("parent",v)}/></div>
-        <div><Field label="Parent Phone" value={form.phone} onChange={v=>F("phone",v)}/></div>
-        <div><Field label="Emergency Contact" value={form.emergency_contact||""} onChange={v=>F("emergency_contact",v)} placeholder="Alternative contact number for emergencies"/></div>
+        <div><PhoneField label="Parent Phone" value={form.phone} onChange={v=>F("phone",v)}/></div>
+        <div><PhoneField label="Emergency Contact" value={form.emergency_contact||""} onChange={v=>F("emergency_contact",v)}/></div>
         <div className="grid-full"><label className="label">Health Condition (Allergies, Illnesses, etc.)</label><textarea className="input" style={{height:50,resize:"vertical"}} value={form.medical_notes||""} onChange={e=>F("medical_notes",e.target.value)}/></div>
       </div>
       <div className="flex gap-8 justify-between" style={{marginTop:14}}>
@@ -1770,7 +1795,7 @@ function Admissions({db,user}){
       <div style={{fontWeight:900,fontSize:16,marginBottom:14,fontFamily:"'Playfair Display',serif"}}>{editId?"✏️ Edit Application":"📝 New Application"}</div>
       <Field label="Name Kamili *" value={form.full_name} onChange={v=>setForm(f=>({...f,full_name:v}))}/>
       <Field label="Parent Name" value={form.parent} onChange={v=>setForm(f=>({...f,parent:v}))}/>
-      <Field label="Phone" value={form.phone} onChange={v=>setForm(f=>({...f,phone:v}))}/>
+      <PhoneField label="Phone" value={form.phone} onChange={v=>setForm(f=>({...f,phone:v}))}/>
       <Field label="Class Analoomba" value={form.apply_class} onChange={v=>setForm(f=>({...f,apply_class:v}))}/>
       <Select label="Status" value={form.status} onChange={v=>setForm(f=>({...f,status:v}))} options={["Pending","Admitted","Rejected"]}/>
       <Field label="Date" value={form.app_date} onChange={v=>setForm(f=>({...f,app_date:v}))} type="date"/>
@@ -1878,7 +1903,7 @@ function Staff({db,user}){
         <div className="grid-full"><Field label="Name Kamili *" value={form.name} onChange={v=>F("name",v)}/></div>
         <div><Select label="Rankings" value={form.role} onChange={v=>F("role",v)} options={ROLES}/></div>
         <div><Select label="Jinsia" value={form.gender} onChange={v=>F("gender",v)} options={["Male","Female"]}/></div>
-        <div><Field label="Phone" value={form.phone} onChange={v=>F("phone",v)}/></div>
+        <div><PhoneField label="Phone" value={form.phone} onChange={v=>F("phone",v)}/></div>
         <div><Field label="Email" value={form.email} onChange={v=>F("email",v)} type="email"/></div>
         <div><Field label="Date Hired" value={form.join_date} onChange={v=>F("join_date",v)} type="date"/></div>
         <div><Field label="Mshahara (TZS)" value={form.salary} onChange={v=>F("salary",v)} type="number"/></div>
@@ -4333,7 +4358,7 @@ function StudentProfile({db,user}){
         <div><label className="label">Class</label><select className="input" value={form.class_name||""} onChange={e=>F("class_name",e.target.value)}>{classes.map(c=><option key={c.id}>{c.name}</option>)}</select></div>
         <div><label className="label">Term Fee</label><input className="input" type="number" value={form.term_fee||""} onChange={e=>F("term_fee",e.target.value)}/></div>
         <div><label className="label">Parent Name</label><input className="input" value={form.parent||""} onChange={e=>F("parent",e.target.value)}/></div>
-        <div><label className="label">Parent Phone</label><input className="input" value={form.phone||""} placeholder="7XXXXXXXX au 255XXXXXXXXX" onChange={e=>{let v=e.target.value.replace(/\D/g,"");if(v.startsWith("0"))v="255"+v.slice(1);else if(v.startsWith("7")||v.startsWith("6"))v="255"+v;F("phone",v);}}/></div>
+        <PhoneField label="Parent Phone" value={form.phone||""} onChange={v=>F("phone",v)}/>
         <div><label className="label">Parent Email</label><input className="input" type="email" value={form.parent_email||""} onChange={e=>F("parent_email",e.target.value)}/></div>
         <div><label className="label">Blood Group</label><select className="input" value={form.blood_group||""} onChange={e=>F("blood_group",e.target.value)}><option value="">—</option>{["A+","A-","B+","B-","AB+","AB-","O+","O-"].map(b=><option key={b}>{b}</option>)}</select></div>
         <div className="grid-full"><label className="label">Address</label><input className="input" value={form.address||""} onChange={e=>F("address",e.target.value)}/></div>
@@ -4426,11 +4451,11 @@ function StaffProfile({db,user}){
         <div><label className="label">Role</label><select className="input" value={form.role||""} onChange={e=>F("role",e.target.value)}>{ROLES.map(r=><option key={r}>{r}</option>)}</select></div>
         <div><label className="label">Status</label><select className="input" value={form.status||"Active"} onChange={e=>F("status",e.target.value)}>{["Active","On Leave","Resigned"].map(s=><option key={s}>{s}</option>)}</select></div>
         <div><label className="label">Gender</label><select className="input" value={form.gender||"Male"} onChange={e=>F("gender",e.target.value)}><option>Male</option><option>Female</option></select></div>
-        <div><label className="label">Phone</label><input className="input" value={form.phone||""} placeholder="7XXXXXXXX au 255XXXXXXXXX" onChange={e=>{let v=e.target.value.replace(/\D/g,"");if(v.startsWith("0"))v="255"+v.slice(1);else if(v.startsWith("7")||v.startsWith("6"))v="255"+v;F("phone",v);}}/></div>
+        <PhoneField label="Phone" value={form.phone||""} onChange={v=>F("phone",v)}/>
         <div><label className="label">Email</label><input className="input" type="email" value={form.email||""} onChange={e=>F("email",e.target.value)}/></div>
         <div><label className="label">Salary (TZS)</label><input className="input" type="number" value={form.salary||""} onChange={e=>F("salary",e.target.value)}/></div>
         <div><label className="label">National ID</label><input className="input" value={form.national_id||""} onChange={e=>F("national_id",e.target.value)}/></div>
-        <div><label className="label">Emergency Contact</label><input className="input" value={form.emergency_contact||""} onChange={e=>F("emergency_contact",e.target.value)}/></div>
+        <PhoneField label="Emergency Contact" value={form.emergency_contact||""} onChange={v=>F("emergency_contact",v)}/>
         <div className="grid-full"><label className="label">Qualifications</label><textarea className="input" style={{height:50,resize:"vertical"}} value={form.qualifications||""} onChange={e=>F("qualifications",e.target.value)}/></div>
         <div className="grid-full"><label className="label">Address</label><input className="input" value={form.address||""} onChange={e=>F("address",e.target.value)}/></div>
       </div>
@@ -5752,7 +5777,7 @@ function UserAccounts({db,user}){
       <Field label="Name Kamili *" value={form.full_name} onChange={v=>setForm(f=>({...f,full_name:v}))}/>
       <Field label="Email *" value={form.email} onChange={v=>setForm(f=>({...f,email:v}))} type="email"/>
       <Select label="Rankings" value={form.role} onChange={v=>setForm(f=>({...f,role:v}))} options={["admin","teacher","accountant","parent"]}/>
-      <Field label="Phone" value={form.phone} onChange={v=>setForm(f=>({...f,phone:v}))}/>
+      <PhoneField label="Phone" value={form.phone} onChange={v=>setForm(f=>({...f,phone:v}))}/>
       {msg&&<div className={`${msg.startsWith("✅")?"success-box":"error-box"}`}>{msg}</div>}
       <div style={{padding:10,background:"#f0f7ff",borderRadius:8,fontSize:12,marginBottom:12,color:C.textSoft}}>💡 To create a new account: Go to Supabase Dashboard → Authentication → Users → Add User</div>
       <div className="flex gap-8 justify-between" style={{marginTop:14}}>
@@ -6714,9 +6739,9 @@ function Alumni({db,user}){
         <div><Field label="Last Class" value={form.last_class} onChange={v=>setForm(f=>({...f,last_class:v}))}/></div>
         <div><Field label="Current School" value={form.current_school} onChange={v=>setForm(f=>({...f,current_school:v}))}/></div>
         <div><Field label="Current Level" value={form.current_level} onChange={v=>setForm(f=>({...f,current_level:v}))}/></div>
-        <div><Field label="Phone" value={form.phone} onChange={v=>setForm(f=>({...f,phone:v}))}/></div>
+        <div><PhoneField label="Phone" value={form.phone} onChange={v=>setForm(f=>({...f,phone:v}))}/></div>
         <div><Field label="Email" value={form.email} onChange={v=>setForm(f=>({...f,email:v}))} type="email"/></div>
-        <div><Field label="Parent Phone" value={form.parent_phone} onChange={v=>setForm(f=>({...f,parent_phone:v}))}/></div>
+        <div><PhoneField label="Parent Phone" value={form.parent_phone} onChange={v=>setForm(f=>({...f,parent_phone:v}))}/></div>
         <div className="grid-full"><label className="label">Achievements</label><textarea className="input" style={{height:60,resize:"vertical"}} value={form.achievements} onChange={e=>setForm(f=>({...f,achievements:e.target.value}))}/></div>
       </div>
       <div className="flex gap-8 justify-between" style={{marginTop:14}}>
