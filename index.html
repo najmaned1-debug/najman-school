@@ -870,6 +870,7 @@ function AdminContracts({ db, user }) {
     };
     if (d.contract_end_date === "") d.contract_end_date = null;
     if (d.contract_start_date === "") d.contract_start_date = null;
+    if (d.staff_id === "" || d.staff_id === undefined) d.staff_id = null;
     delete d.id;
     delete d.created_at;
     const { error: updErr } = await db.from("teacher_contracts").update(d).eq("id", sel.id);
@@ -902,6 +903,7 @@ function AdminContracts({ db, user }) {
     const d = { ...form, basic_salary: Number(form.basic_salary) || 0, allowances: Number(form.allowances) || 0, leave_days: Number(form.leave_days) || 28 };
     if (d.contract_end_date === "") d.contract_end_date = null;
     if (d.contract_start_date === "") d.contract_start_date = null;
+    if (d.staff_id === "" || d.staff_id === undefined) d.staff_id = null;
     delete d.id;
     delete d.created_at;
     const { error } = await db.from("teacher_contracts").update(d).eq("id", sel.id);
