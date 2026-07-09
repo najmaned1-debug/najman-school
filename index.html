@@ -1108,7 +1108,10 @@ function TeacherFeeCollect({db,user}){
     // SMS receipt to parent
     if(selected.phone){
       const msg=`Umefanikiwa kulipa TZS ${Number(amount).toLocaleString()} kwa ${selected.name} (${selected.class_name}). Najman Education Centre. +255 742 415 133`;
-      await sendSMS(selected.phone,msg).catch(()=>{});
+      const smsResult = await sendSMS(selected.phone,msg);
+      if(!smsResult.ok) console.error("Fee SMS failed:",smsResult.error);
+    } else {
+      console.warn("No phone number for student, SMS not sent:",selected.name);
     }
     printTeacherReceipt(selected,amount,method,feeType,ref,d.payment_date);
     setDone({name:selected.name,amount,ref,student:selected,method,feeType,payDate:d.payment_date});
@@ -1761,7 +1764,6 @@ function Attendance({db,user}) {
         const msg=`Dear ${s.parent||"Parent"}, your child ${s.name} (${s.class_name}) did NOT come to school today ${date}. Najman School +255 742 415 133`;
         try{
           const rs=await sendSMS(s.phone,msg);
-          await db.from("sms_log").insert({recipient_name:s.name,phone:s.phone,message:msg,status:rs.ok?"sent":"failed",sent_at:new Date().toISOString()});
           if(rs.ok)sent++;
         }catch{}
       }
@@ -1893,6 +1895,17 @@ function Fees({db,user}) {
     if(editP){ await db.from("payments").update(d).eq("id",editP); }
     else {
       await db.from("payments").insert(d);
+      // ── AUTO SMS TO PARENT ──────────────────────────
+      const stForSms = students.find(s=>s.id===form.student_id);
+      if(stForSms?.phone){
+        const allPmtsForSms = [...payments.filter(p=>p.student_id===stForSms.id), {...d,payment_date:form.payment_date}];
+        const totalPaidForSms = allPmtsForSms.reduce((s,p)=>s+Number(p.amount),0);
+        const balForSms = Number(stForSms.term_fee||0) - totalPaidForSms;
+        const smsMsg = balForSms<=0
+          ? `Umefanikiwa kulipa TZS ${Number(form.amount).toLocaleString()} kwa ${stForSms.name} (${stForSms.class_name}). Ada imelipwa kikamilifu. Najman Education Centre. +255 742 415 133`
+          : `Umefanikiwa kulipa TZS ${Number(form.amount).toLocaleString()} kwa ${stForSms.name} (${stForSms.class_name}). Deni lililobaki: TZS ${balForSms.toLocaleString()}. Najman Education Centre. +255 742 415 133`;
+        sendSMS(stForSms.phone,smsMsg).catch(e=>console.error("Fee SMS failed:",e));
+      }
       // ── AUTO RECEIPT ────────────────────────────────
       const st = students.find(s=>s.id===form.student_id);
       if(st){
@@ -2893,7 +2906,6 @@ function BulkSMS({db,user}){
     for(const s of targets){
       const r=await sendSMS(s.phone,message);
       res.push({name:s.name,ok:r.ok,status:r.status||r.error||"?"});
-      await db.from("sms_log").insert({recipient_name:s.name,phone:s.phone,message,status:r.ok?"sent":"failed",sent_at:new Date().toISOString()});
     }
     setResults(res);setSending(false);
   };
@@ -4228,7 +4240,6 @@ function PaymentFollowup({db,user}){
       const msg=`Dear ${s.parent||s.name}, your child ${s.name} (${s.class_name}) has an outstanding fee balance of TZS ${bal.toLocaleString()}. Please pay promptly. Najman School +255 742 415 133`;
       try{const r=await sendSMS(s.phone,msg);
         res.push({name:s.name,ok:r.ok});
-        await db.from("sms_log").insert({recipient_name:s.name,phone:s.phone,message:msg,status:r.ok?"sent":"failed"});
       }catch{res.push({name:s.name,ok:false});}
     }
     setResults(res);setSending(false);
@@ -5623,7 +5634,6 @@ function SmsFeeReminders({db,user}){
       const msg=buildMsg(s);
       try{
         const r=await sendSMS(s.phone,msg);
-        await db.from("sms_log").insert({recipient_name:s.name,phone:s.phone,message:msg,status:r.ok?"sent":"failed"});
         res.push({name:s.name,phone:s.phone,ok:r.ok});
       }catch{res.push({name:s.name,phone:s.phone,ok:false});}
     }
@@ -5707,7 +5717,6 @@ function SmsAbsenceAlerts({db,user}){
       const msg=`Ndugu ${s.parent||"Parent"}, mwanao ${s.name} (${s.class_name}) hakuja school today ${date}. Tafadhali wasiliana nasi. Najman School +255 742 415 133`;
       try{
         const r=await sendSMS(s.phone,msg);
-        await db.from("sms_log").insert({recipient_name:s.name,phone:s.phone,message:msg,status:r.ok?"sent":"failed",sent_at:new Date().toISOString()});
         res.push({name:s.name,ok:r.ok});
       }catch{res.push({name:s.name,ok:false});}
     }
@@ -6248,7 +6257,6 @@ function ControlNumbers({db,user}){
 
     const msg=`Dear ${st.parent||"Parent"}, nambari ya kudumu ya kulipa ada kwa ${st.name} (${st.class_name}): ${st.control_number}. Ada ya Term: TZS ${Number(st.term_fee||0).toLocaleString()}. Najman Education Centre +255 742 415 133`;
     const r=await sendSMS(st.phone,msg);
-    await db.from("sms_log").insert({recipient_name:st.name,phone:st.phone,message:msg,status:r.ok?"sent":"failed"});
     alert(r.ok?"✅ SMS imetumwa!":"❌ SMS haikutumwa. Angalia SMS Settings.");
   };
 
