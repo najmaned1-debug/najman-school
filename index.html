@@ -361,6 +361,7 @@ const NAV = [
     {id:"roles",label:"Role Statements"},
     {id:"staffatt",label:"Staff Attendance"},
     {id:"users",label:"User Accounts"},
+    {id:"contracts",label:"Teacher Contracts"},
   ]},
   {id:"classes_m", icon:"🏫", label:"Classes & Streams", roles:["admin","teacher"], sub:[
     {id:"classes",label:"Classes"},
@@ -575,6 +576,367 @@ function Sidebar({page, setPage, user, onLogout, open}) {
   </div>;
 }
 
+// ============================================================
+// TEACHER CONTRACTS MODULE — insert into index-3.html
+// Depends on existing helpers: db, C, Field, Select, PhoneField,
+// badge, fmtDate, useDB, Spinner, getUserName
+// ============================================================
+
+// ── PDF GENERATOR FOR CONTRACT (print-based, like printPayslip) ──
+const printContractPDF = (c) => {
+  const w = window.open("", "_blank");
+  const typeLabel = c.contract_type === "Temporary" ? "TEMPORARY EMPLOYMENT CONTRACT" : "PERMANENT EMPLOYMENT CONTRACT";
+  w.document.write(`<html><head><title>Employment Contract - ${c.full_name || ""}</title>
+  <style>
+    body{font-family:Georgia,'Times New Roman',serif;max-width:720px;margin:auto;padding:30px;font-size:13px;color:#1a1a1a;line-height:1.6;}
+    .hd{text-align:center;border-bottom:3px solid #e8890a;padding-bottom:14px;margin-bottom:20px;}
+    .hd .school{font-size:20px;font-weight:900;letter-spacing:1px;}
+    .hd .addr{font-size:11px;color:#555;margin-top:2px;}
+    .hd .title{font-size:15px;font-weight:700;margin-top:10px;text-transform:uppercase;letter-spacing:1px;color:#e8890a;}
+    h3{font-size:13px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #ddd;padding-bottom:4px;margin:18px 0 8px;color:#333;}
+    .row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dotted #eee;}
+    .row b{color:#444;}
+    p.body-text{margin:6px 0;text-align:justify;}
+    .sig-block{display:flex;justify-content:space-between;margin-top:50px;}
+    .sig{width:45%;text-align:center;}
+    .sig .line{border-top:1px solid #333;margin-top:40px;padding-top:6px;font-size:12px;}
+    .footer{font-size:10px;text-align:center;margin-top:30px;color:#999;border-top:1px solid #eee;padding-top:10px;}
+    @media print{ body{padding:10px;} }
+  </style></head><body>
+  <div class="hd">
+    <div class="school">NAJMAN EDUCATION CENTRE</div>
+    <div class="addr">Kishili, Mwanza, Tanzania &nbsp;•&nbsp; +255 742 415 133</div>
+    <div class="title">${typeLabel}</div>
+  </div>
+
+  <h3>1. Parties</h3>
+  <p class="body-text">This Employment Contract is entered into between <b>Najman Education Centre</b> ("the Employer") and <b>${c.full_name || "—"}</b> ("the Employee"), effective from <b>${c.contract_start_date || "—"}</b>.</p>
+
+  <h3>2. Employee Details</h3>
+  <div class="row"><span>Full Name</span><b>${c.full_name || "—"}</b></div>
+  <div class="row"><span>National ID</span><b>${c.national_id || "—"}</b></div>
+  <div class="row"><span>Phone</span><b>${c.phone ? "+" + c.phone : "—"}</b></div>
+  <div class="row"><span>Address</span><b>${c.address || "—"}</b></div>
+  <div class="row"><span>Education / Qualification</span><b>${c.qualification || "—"} (${c.education_level || "—"})</b></div>
+
+  <h3>3. Position & Employment Terms</h3>
+  <div class="row"><span>Position</span><b>${c.position || "—"}</b></div>
+  <div class="row"><span>Department</span><b>${c.department || "—"}</b></div>
+  <div class="row"><span>Contract Type</span><b>${c.contract_type || "—"}</b></div>
+  <div class="row"><span>Contract Duration</span><b>${c.contract_duration || "—"}</b></div>
+  <div class="row"><span>Probation Period</span><b>${c.probation_period || "—"}</b></div>
+  <div class="row"><span>Start Date</span><b>${c.contract_start_date || "—"}</b></div>
+  <div class="row"><span>End Date</span><b>${c.contract_end_date || "Ongoing"}</b></div>
+  <div class="row"><span>Working Hours</span><b>${c.working_hours || "—"}</b></div>
+
+  <h3>4. Remuneration</h3>
+  <div class="row"><span>Basic Salary</span><b>TZS ${Number(c.basic_salary || 0).toLocaleString()}</b></div>
+  <div class="row"><span>Salary Payment Date</span><b>${c.salary_payment_date || "—"}</b></div>
+  <div class="row"><span>Annual Leave Days</span><b>${c.leave_days || "—"} days</b></div>
+
+  <h3>5. Duties & Responsibilities</h3>
+  <p class="body-text">${(c.responsibilities || "As assigned by the School Administration.").replace(/\n/g, "<br/>")}</p>
+
+  <h3>6. Termination</h3>
+  <p class="body-text">Either party may terminate this contract by providing <b>${c.termination_notice || "30 days"}</b> written notice, subject to the school's employment policies and Tanzanian labour law.</p>
+
+  <h3>7. Next of Kin</h3>
+  <div class="row"><span>Name</span><b>${c.next_of_kin_name || "—"}</b></div>
+  <div class="row"><span>Relationship</span><b>${c.next_of_kin_relationship || "—"}</b></div>
+  <div class="row"><span>Phone</span><b>${c.next_of_kin_phone ? "+" + c.next_of_kin_phone : "—"}</b></div>
+
+  <div class="sig-block">
+    <div class="sig">
+      <div class="line">${c.teacher_signature_name || c.full_name || "Employee"}<br/><span style="color:#999;">Employee — ${c.teacher_signed_at ? new Date(c.teacher_signed_at).toLocaleDateString("en-GB") : "Date"}</span></div>
+    </div>
+    <div class="sig">
+      <div class="line">${c.admin_signature_name || "Administrator"}<br/><span style="color:#999;">For Najman Education Centre — ${c.admin_signed_at ? new Date(c.admin_signed_at).toLocaleDateString("en-GB") : "Date"}</span></div>
+    </div>
+  </div>
+
+  <div class="footer">Najman Education Centre — School Management System v7.0 &nbsp;•&nbsp; Generated ${new Date().toLocaleDateString("en-GB")}</div>
+  </body></html>`);
+  w.document.close();
+  setTimeout(() => w.print(), 500);
+};
+
+// ── STATUS BADGE HELPER ─────────────────────────────────
+const contractStatusColor = (status) => ({
+  draft: C.muted,
+  pending_admin_review: C.accent,
+  confirmed: C.green,
+  active: C.blue,
+  terminated: C.red,
+}[status] || C.muted);
+
+const contractStatusLabel = (status) => ({
+  draft: "Draft",
+  pending_admin_review: "Waiting Admin Review",
+  confirmed: "Confirmed",
+  active: "Active",
+  terminated: "Terminated",
+}[status] || status);
+
+// ============================================================
+// TEACHER-SIDE: Fill / View My Contract
+// ============================================================
+function TeacherContract({ db, user }) {
+  const [contract, setContract] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const blank = {
+    teacher_user_id: user.id,
+    contract_type: "Permanent",
+    full_name: user?.profile?.full_name || "",
+    national_id: "",
+    phone: "",
+    address: "",
+    next_of_kin_name: "",
+    next_of_kin_phone: "",
+    next_of_kin_relationship: "",
+    education_level: "",
+    qualification: "",
+    start_date_preferred: fmtDate(),
+    status: "draft",
+  };
+  const [form, setForm] = useState(blank);
+  const F = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await db.from("teacher_contracts").select("*").eq("teacher_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (data) { setContract(data); setForm(data); }
+    else { setContract(null); setForm(blank); }
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const submit = async () => {
+    if (!form.full_name.trim() || !form.national_id.trim() || !form.phone) {
+      alert("Tafadhali jaza Jina Kamili, Namba ya Kitambulisho, na Namba ya Simu.");
+      return;
+    }
+    const d = { ...form, status: "pending_admin_review" };
+    if (contract?.id) {
+      await db.from("teacher_contracts").update(d).eq("id", contract.id);
+    } else {
+      await db.from("teacher_contracts").insert(d);
+    }
+    alert("✅ Umetuma taarifa zako za mkataba! Admin atakamilisha na kuthibitisha hivi karibuni.");
+    load();
+  };
+
+  const saveDraft = async () => {
+    const d = { ...form };
+    if (contract?.id) {
+      await db.from("teacher_contracts").update(d).eq("id", contract.id);
+    } else {
+      await db.from("teacher_contracts").insert(d);
+    }
+    alert("💾 Umehifadhi kama Rasimu (Draft).");
+    load();
+  };
+
+  if (loading) return <Spinner />;
+
+  const locked = contract && contract.status !== "draft";
+
+  return <div>
+    <div style={{ fontSize: 21, fontWeight: 900, fontFamily: "'Playfair Display',serif", marginBottom: 4 }}>📄 Mkataba Wangu wa Kazi</div>
+    <div style={{ color: C.muted, fontSize: 13, marginBottom: 16 }}>Jaza taarifa zako. Baada ya kutuma, Msimamizi (Admin) atakamilisha masharti ya mshahara na mkataba, kisha kuthibitisha.</div>
+
+    {contract && <div className="card" style={{ marginBottom: 16, borderLeft: `4px solid ${contractStatusColor(contract.status)}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ fontWeight: 900 }}>Hali ya Mkataba</div>
+        {badge(contractStatusColor(contract.status), contractStatusLabel(contract.status))}
+      </div>
+      {contract.status === "confirmed" || contract.status === "active" ? <>
+        <div style={{ marginTop: 10, fontSize: 13, color: C.textSoft }}>
+          Mkataba wako umethibitishwa na Msimamizi. Unaweza kupakua/kuchapisha nakala yako.
+        </div>
+        <button className="btn" style={{ marginTop: 10 }} onClick={() => printContractPDF(contract)}>📄 Pakua / Chapisha Mkataba</button>
+      </> : <div style={{ marginTop: 8, fontSize: 13, color: C.textSoft }}>
+        {contract.status === "pending_admin_review" ? "Taarifa zako zimetumwa. Subiri Admin akamilishe masharti ya kazi." : "Bado haujatuma taarifa zako."}
+      </div>}
+    </div>}
+
+    <div className="card">
+      <div style={{ fontWeight: 900, fontSize: 15, marginBottom: 10 }}>👤 Taarifa Binafsi</div>
+      <Select label="Aina ya Mkataba" value={form.contract_type} onChange={v => F("contract_type", v)} options={["Permanent", "Temporary"]} />
+      <Field label="Jina Kamili *" value={form.full_name} onChange={v => F("full_name", v)} placeholder="Jina lako kamili" />
+      <Field label="Namba ya Kitambulisho (NIDA) *" value={form.national_id} onChange={v => F("national_id", v)} placeholder="19XX-XXXX-XXXXX-XXXXX" />
+      <PhoneField label="Namba ya Simu *" value={form.phone} onChange={v => F("phone", v)} />
+      <Field label="Anuani / Makazi" value={form.address} onChange={v => F("address", v)} placeholder="Mtaa, Kata, Wilaya" />
+      <Field label="Kiwango cha Elimu" value={form.education_level} onChange={v => F("education_level", v)} placeholder="k.m. Cheti, Stashahada, Shahada" />
+      <Field label="Taaluma / Fani" value={form.qualification} onChange={v => F("qualification", v)} placeholder="k.m. Ualimu wa Sayansi" />
+      <Field label="Tarehe Unayopendelea Kuanza" value={form.start_date_preferred} onChange={v => F("start_date_preferred", v)} type="date" />
+
+      <div style={{ fontWeight: 900, fontSize: 15, margin: "18px 0 10px" }}>👨‍👩‍👦 Mdhamini / Ndugu wa Karibu</div>
+      <Field label="Jina la Mdhamini" value={form.next_of_kin_name} onChange={v => F("next_of_kin_name", v)} />
+      <Field label="Uhusiano" value={form.next_of_kin_relationship} onChange={v => F("next_of_kin_relationship", v)} placeholder="k.m. Mzazi, Ndugu, Mwenzi" />
+      <PhoneField label="Namba ya Simu ya Mdhamini" value={form.next_of_kin_phone} onChange={v => F("next_of_kin_phone", v)} />
+
+      {!locked ? <div className="flex gap-8" style={{ marginTop: 16 }}>
+        <button className="btn-ghost" onClick={saveDraft}>💾 Hifadhi Rasimu</button>
+        <button className="btn" onClick={submit}>📨 Tuma kwa Admin</button>
+      </div> : <div style={{ marginTop: 16, padding: 10, background: "rgba(148,163,184,.1)", borderRadius: 8, fontSize: 12, color: C.muted, textAlign: "center" }}>
+        Taarifa hizi hazibadiliki tena kwani mkataba tayari uko kwenye mchakato wa Admin.
+      </div>}
+    </div>
+  </div>;
+}
+
+// ============================================================
+// ADMIN-SIDE: Manage All Contracts
+// ============================================================
+function AdminContracts({ db, user }) {
+  const { data: contracts, loading, refresh } = useDB("teacher_contracts", { order: "created_at", asc: false });
+  const { data: staffList } = useDB("staff", { order: "name" });
+  const [modal, setModal] = useState(false);
+  const [sel, setSel] = useState(null);
+  const [form, setForm] = useState({});
+  const F = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const openReview = (c) => {
+    setSel(c);
+    setForm({
+      ...c,
+      position: c.position || "",
+      department: c.department || "",
+      basic_salary: c.basic_salary || "",
+      salary_payment_date: c.salary_payment_date || "25th of every month",
+      contract_duration: c.contract_duration || (c.contract_type === "Temporary" ? "6 Months" : "Permanent"),
+      probation_period: c.probation_period || "3 Months",
+      working_hours: c.working_hours || "Mon–Fri, 7:30 AM – 4:00 PM",
+      leave_days: c.leave_days || 28,
+      termination_notice: c.termination_notice || "30 Days written notice",
+      responsibilities: c.responsibilities || "",
+      contract_start_date: c.contract_start_date || c.start_date_preferred || fmtDate(),
+      contract_end_date: c.contract_end_date || "",
+      admin_signature_name: c.admin_signature_name || getUserName(user),
+    });
+    setModal(true);
+  };
+
+  const confirmContract = async () => {
+    if (!form.position || !form.basic_salary) {
+      alert("Tafadhali jaza angalau Wadhifa (Position) na Mshahara wa Msingi.");
+      return;
+    }
+    const d = {
+      ...form,
+      basic_salary: Number(form.basic_salary) || 0,
+      leave_days: Number(form.leave_days) || 28,
+      status: "confirmed",
+      admin_signed_at: new Date().toISOString(),
+      admin_signature_name: form.admin_signature_name || getUserName(user),
+    };
+    await db.from("teacher_contracts").update(d).eq("id", sel.id);
+    refresh();
+    setModal(false);
+    alert("✅ Mkataba umethibitishwa! Mwalimu sasa anaweza kuupakua.");
+  };
+
+  const saveOnly = async () => {
+    const d = { ...form, basic_salary: Number(form.basic_salary) || 0, leave_days: Number(form.leave_days) || 28 };
+    await db.from("teacher_contracts").update(d).eq("id", sel.id);
+    refresh();
+    setModal(false);
+  };
+
+  const markActive = async (c) => {
+    await db.from("teacher_contracts").update({ status: "active" }).eq("id", c.id);
+    refresh();
+  };
+  const markTerminated = async (c) => {
+    if (!confirm(`Una uhakika unataka kusitisha mkataba wa ${c.full_name}?`)) return;
+    await db.from("teacher_contracts").update({ status: "terminated" }).eq("id", c.id);
+    refresh();
+  };
+
+  if (loading) return <Spinner />;
+
+  return <div>
+    <div style={{ fontSize: 21, fontWeight: 900, fontFamily: "'Playfair Display',serif", marginBottom: 4 }}>📄 Mikataba ya Walimu</div>
+    <div style={{ color: C.muted, fontSize: 13, marginBottom: 16 }}>Kagua taarifa zilizotumwa na walimu, kamilisha masharti ya mshahara/kazi, kisha thibitisha.</div>
+
+    <div className="flex gap-10 mb-14 flex-wrap">
+      {[
+        { l: "Waiting Review", v: contracts.filter(c => c.status === "pending_admin_review").length, c: C.accent },
+        { l: "Confirmed", v: contracts.filter(c => c.status === "confirmed").length, c: C.green },
+        { l: "Active", v: contracts.filter(c => c.status === "active").length, c: C.blue },
+        { l: "Total", v: contracts.length, c: C.purple },
+      ].map(x => (
+        <div key={x.l} className="stat-card" style={{ borderTop: `3px solid ${x.c}`, flex: 1, textAlign: "center" }}>
+          <div style={{ fontSize: 22, fontWeight: 900, color: x.c }}>{x.v}</div>
+          <div style={{ fontSize: 12, color: C.textSoft }}>{x.l}</div>
+        </div>
+      ))}
+    </div>
+
+    <div className="card">
+      <table className="table">
+        <thead><tr>{["Mwalimu", "Aina", "Hali", "Wadhifa", "Mshahara", ""].map(h => <th key={h}>{h}</th>)}</tr></thead>
+        <tbody>{contracts.map(c => <tr key={c.id}>
+          <td style={{ fontWeight: 700 }}>{c.full_name || "—"}<div style={{ fontSize: 11, color: C.muted }}>{c.phone ? "+" + c.phone : ""}</div></td>
+          <td>{badge(c.contract_type === "Temporary" ? C.orange : C.blue, c.contract_type || "—")}</td>
+          <td>{badge(contractStatusColor(c.status), contractStatusLabel(c.status))}</td>
+          <td>{c.position || "—"}</td>
+          <td>{c.basic_salary ? "TZS " + Number(c.basic_salary).toLocaleString() : "—"}</td>
+          <td style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+            {(c.status === "pending_admin_review" || c.status === "draft") && <button className="btn-ghost" style={{ padding: "3px 8px", fontSize: 12 }} onClick={() => openReview(c)}>✏️ Kamilisha</button>}
+            {c.status === "confirmed" && <button className="btn-ghost" style={{ padding: "3px 8px", fontSize: 12 }} onClick={() => markActive(c)}>✅ Fanya Active</button>}
+            {(c.status === "confirmed" || c.status === "active") && <button className="btn-ghost" style={{ padding: "3px 8px", fontSize: 12 }} onClick={() => printContractPDF(c)}>📄 PDF</button>}
+            {c.status !== "terminated" && c.status !== "draft" && <button className="btn btn-red" style={{ padding: "3px 8px", fontSize: 12 }} onClick={() => markTerminated(c)}>🛑</button>}
+          </td>
+        </tr>)}</tbody>
+      </table>
+      {contracts.length === 0 && <div style={{ padding: 16, textAlign: "center", color: C.muted }}>Hakuna mikataba bado.</div>}
+    </div>
+
+    {modal && sel && <div className="overlay"><div className="modal" style={{ maxWidth: 560 }}>
+      <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 4 }}>📄 Kamilisha Mkataba — {sel.full_name}</div>
+      <div style={{ fontSize: 12, color: C.muted, marginBottom: 14 }}>Taarifa binafsi zimetumwa na mwalimu. Jaza masharti ya kazi hapa chini.</div>
+
+      <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 8, color: C.accent }}>TAARIFA ZA MWALIMU (Zisizobadilika)</div>
+      <div className="grid-2" style={{ marginBottom: 10, fontSize: 12 }}>
+        <div><b>NIDA:</b> {sel.national_id || "—"}</div>
+        <div><b>Elimu:</b> {sel.education_level || "—"} — {sel.qualification || "—"}</div>
+        <div><b>Anuani:</b> {sel.address || "—"}</div>
+        <div><b>Mdhamini:</b> {sel.next_of_kin_name || "—"} ({sel.next_of_kin_relationship || "—"})</div>
+      </div>
+
+      <div style={{ fontWeight: 800, fontSize: 13, margin: "14px 0 8px", color: C.accent }}>MASHARTI YA KAZI (Admin Kujaza)</div>
+      <div className="grid-2">
+        <div><Field label="Wadhifa / Position *" value={form.position} onChange={v => F("position", v)} placeholder="k.m. Class Teacher" /></div>
+        <div><Field label="Idara / Department" value={form.department} onChange={v => F("department", v)} placeholder="k.m. Primary Section" /></div>
+        <div><Field label="Mshahara wa Msingi (TZS) *" value={form.basic_salary} onChange={v => F("basic_salary", v)} type="number" /></div>
+        <div><Field label="Tarehe ya Malipo" value={form.salary_payment_date} onChange={v => F("salary_payment_date", v)} placeholder="k.m. 25th of every month" /></div>
+        <div><Field label="Muda wa Mkataba" value={form.contract_duration} onChange={v => F("contract_duration", v)} placeholder="k.m. 12 Months" /></div>
+        <div><Field label="Kipindi cha Majaribio" value={form.probation_period} onChange={v => F("probation_period", v)} placeholder="k.m. 3 Months" /></div>
+        <div><Field label="Tarehe ya Kuanza" value={form.contract_start_date} onChange={v => F("contract_start_date", v)} type="date" /></div>
+        <div><Field label="Tarehe ya Kumaliza (ikiwa ipo)" value={form.contract_end_date} onChange={v => F("contract_end_date", v)} type="date" /></div>
+        <div><Field label="Masaa ya Kazi" value={form.working_hours} onChange={v => F("working_hours", v)} /></div>
+        <div><Field label="Siku za Likizo kwa Mwaka" value={form.leave_days} onChange={v => F("leave_days", v)} type="number" /></div>
+      </div>
+      <Field label="Notisi ya Kusitisha Mkataba" value={form.termination_notice} onChange={v => F("termination_notice", v)} />
+      <div className="mb-12">
+        <label className="label">Majukumu / Responsibilities</label>
+        <textarea className="input" rows={4} value={form.responsibilities || ""} onChange={e => F("responsibilities", e.target.value)} placeholder="Andika majukumu makuu ya kazi hii..." />
+      </div>
+      <Field label="Jina la Msimamizi (Saini)" value={form.admin_signature_name} onChange={v => F("admin_signature_name", v)} />
+
+      <div className="flex gap-8 justify-between" style={{ marginTop: 16 }}>
+        <button className="btn-ghost" onClick={() => { setModal(false); setSel(null); }}>Ghairi</button>
+        <div className="flex gap-8">
+          <button className="btn-ghost" onClick={saveOnly}>💾 Hifadhi tu</button>
+          <button className="btn" onClick={confirmContract}>✅ Thibitisha Mkataba</button>
+        </div>
+      </div>
+    </div></div>}
+  </div>;
+}
+
+
 // ── APP ────────────────────────────────────────────────
 
 // ── TEACHER PORTAL ─────────────────────────────────────
@@ -591,11 +953,13 @@ function TeacherPortal({db,user,setPage}){
       <button className={`btn ${tab==="fees"?"btn-orange":""}`} onClick={()=>setTab("fees")}>💰 Collect Fees</button>
       <button className={`btn ${tab==="attendance"?"btn-orange":""}`} onClick={()=>setTab("attendance")}>✅ Attendance</button>
       <button className={`btn ${tab==="lesson_log"?"btn-orange":""}`} onClick={()=>setTab("lesson_log")}>📔 Lesson Log</button>
+      <button className={`btn ${tab==="contract"?"btn-orange":""}`} onClick={()=>setTab("contract")}>📄 Mkataba Wangu</button>
     </div>
     {tab==="students" && <TeacherStudentReg db={db} user={user}/>}
     {tab==="fees" && <TeacherFeeCollect db={db} user={user}/>}
     {tab==="attendance" && setPage("attendance")}
     {tab==="lesson_log" && <LessonLog db={db} user={user}/>}
+    {tab==="contract" && <TeacherContract db={db} user={user}/>}
   </div>;
 }
 
@@ -1053,6 +1417,7 @@ function App() {
       {page==="alumni"            && <Alumni {...P}/>}
       {page==="documents"         && <Documents {...P}/>}
       {page==="teacher_portal"   && <TeacherPortal {...P}/>}
+      {page==="contracts"        && <AdminContracts {...P}/>}
     </main>
   </div>;
 }
