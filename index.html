@@ -1896,9 +1896,9 @@ function Fees({db,user}) {
     else {
       await db.from("payments").insert(d);
       // ── AUTO SMS TO PARENT ──────────────────────────
-      const stForSms = students.find(s=>s.id===form.student_id);
+      const stForSms = students.find(s=>s.id==form.student_id);
       if(stForSms?.phone){
-        const allPmtsForSms = [...payments.filter(p=>p.student_id===stForSms.id), {...d,payment_date:form.payment_date}];
+        const allPmtsForSms = [...payments.filter(p=>p.student_id==stForSms.id), {...d,payment_date:form.payment_date}];
         const totalPaidForSms = allPmtsForSms.reduce((s,p)=>s+Number(p.amount),0);
         const balForSms = Number(stForSms.term_fee||0) - totalPaidForSms;
         const smsMsg = balForSms<=0
@@ -1907,9 +1907,9 @@ function Fees({db,user}) {
         sendSMS(stForSms.phone,smsMsg).catch(e=>console.error("Fee SMS failed:",e));
       }
       // ── AUTO RECEIPT ────────────────────────────────
-      const st = students.find(s=>s.id===form.student_id);
+      const st = students.find(s=>s.id==form.student_id);
       if(st){
-        const allPmts = [...payments.filter(p=>p.student_id===st.id), {...d,payment_date:form.payment_date}];
+        const allPmts = [...payments.filter(p=>p.student_id==st.id), {...d,payment_date:form.payment_date}];
         const totalPaidNow = allPmts.reduce((s,p)=>s+Number(p.amount),0);
         const fee = Number(st.term_fee||0);
         const bal = fee - totalPaidNow;
