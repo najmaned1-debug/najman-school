@@ -801,6 +801,7 @@ function AdminContracts({ db, user }) {
     setSel(c);
     setForm({
       ...c,
+      staff_id: c.staff_id || "",
       position: c.position || "",
       department: c.department || "",
       basic_salary: c.basic_salary || "",
@@ -832,6 +833,20 @@ function AdminContracts({ db, user }) {
       admin_signature_name: form.admin_signature_name || getUserName(user),
     };
     await db.from("teacher_contracts").update(d).eq("id", sel.id);
+
+    // Sync salary/position to linked staff record, if one was selected
+    if (form.staff_id) {
+      await db.from("staff").update({
+        salary: Number(form.basic_salary) || 0,
+        role: form.position || undefined,
+      }).eq("id", form.staff_id);
+    }
+
+    // Notify the teacher by SMS that their contract is confirmed
+    if (form.phone) {
+      sendSMS(form.phone, `Habari ${form.full_name}, mkataba wako wa kazi (${form.position}) umethibitishwa na Najman Education Centre. Fungua Mkataba Wangu kwenye dashboard kupakua nakala yako.`).catch(() => {});
+    }
+
     refresh();
     setModal(false);
     alert("✅ Mkataba umethibitishwa! Mwalimu sasa anaweza kuupakua.");
@@ -904,6 +919,16 @@ function AdminContracts({ db, user }) {
         <div><b>Elimu:</b> {sel.education_level || "—"} — {sel.qualification || "—"}</div>
         <div><b>Anuani:</b> {sel.address || "—"}</div>
         <div><b>Mdhamini:</b> {sel.next_of_kin_name || "—"} ({sel.next_of_kin_relationship || "—"})</div>
+      </div>
+
+      <div style={{ fontWeight: 800, fontSize: 13, margin: "14px 0 8px", color: C.accent }}>UNGANISHA NA REKODI YA STAFF (Hiari)</div>
+      <div className="mb-12">
+        <label className="label">Chagua Rekodi ya Staff (kwa ajili ya Payroll)</label>
+        <select className="input" value={form.staff_id || ""} onChange={e => F("staff_id", e.target.value)}>
+          <option value="">— Hakuna, usiunganishe —</option>
+          {staffList.map(s => <option key={s.id} value={s.id}>{s.name} ({s.role || "—"})</option>)}
+        </select>
+        <div style={{ fontSize: 11, color: C.muted, marginTop: 4 }}>Ukichagua, mshahara na wadhifa vitasasishwa moja kwa moja kwenye rekodi ya Staff wakati wa kuthibitisha.</div>
       </div>
 
       <div style={{ fontWeight: 800, fontSize: 13, margin: "14px 0 8px", color: C.accent }}>MASHARTI YA KAZI (Admin Kujaza)</div>
