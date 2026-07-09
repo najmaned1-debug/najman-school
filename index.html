@@ -353,6 +353,7 @@ const NAV = [
     {id:"attendance",label:"Student Attendance"},
     {id:"diary",label:"Student Diary"},
     {id:"grad_left",label:"Wahitimu / Walioacha"},
+    {id:"missing_phones",label:"Bila Namba ya Simu"},
   ]},
   {id:"staff_m", icon:"👨‍🏫", label:"Staff Management", roles:["admin"], sub:[
     {id:"staff",label:"All Staff"},
@@ -1377,6 +1378,7 @@ function App() {
       {page==="fee_settings"      && <FeeSettings {...P}/>}
       {page==="sms_settings"      && <SmsSettings {...P}/>}
       {page==="student_profile"   && <StudentProfile {...P}/>}
+      {page==="missing_phones"    && <MissingPhones {...P}/>}
       {page==="staff_profile"     && <StaffProfile {...P}/>}
       {page==="diary"             && <StudentDiary {...P}/>}
       {page==="grad_left"         && <GraduatedLeftStudents {...P}/>}
@@ -4430,7 +4432,7 @@ function FeeSettings({db,user}){
 
 // ── SMS SENDER NAME REQUEST ────────────────────────────
 function SmsSettings({db,user}){
-  const [cfg,setCfg]=useState({sms_sender:"255742415133",sms_api_key:"",nextsms_username:"asherijohn67.192",nextsms_password:"",nextsms_token:""});
+  const [cfg,setCfg]=useState({sms_sender:"255742415133",sms_api_key:"",nextsms_username:"asherijohn67.192",nextsms_password:"",nextsms_token:"",admin_phone:""});
   const [saved,setSaved]=useState(false);
   const [testing,setTesting]=useState(false);
   const [testPhone,setTestPhone]=useState("");
@@ -4541,6 +4543,11 @@ function SmsSettings({db,user}){
             <input className="input" value={cfg.sms_sender} onChange={e=>setCfg(c=>({...c,sms_sender:e.target.value}))} placeholder="NAJMAN or 255742415133"/>
             <div style={{fontSize:13,color:C.green,marginTop:2}}>✅ "NAJMAN" is approved and active.</div>
           </div>
+          <div className="mb-12">
+            <label className="label">📱 Admin Phone (Homework approval alerts)</label>
+            <input className="input" value={cfg.admin_phone||""} onChange={e=>setCfg(c=>({...c,admin_phone:e.target.value}))} placeholder="255742415133"/>
+            <div style={{fontSize:12,color:C.muted,marginTop:2}}>Utapata SMS pale mwalimu anapotuma homework inayosubiri idhini yako.</div>
+          </div>
           <div style={{height:1,background:"#1f2e47",margin:"12px 0"}}/>
           <div className="mb-10">
             <label className="label">Test Phone Number</label>
@@ -4549,6 +4556,52 @@ function SmsSettings({db,user}){
           <button className="btn btn-green w-full" onClick={testSMS} disabled={testing}>{testing?"⏳ Inatuma...":"📲 Send Test SMS"}</button>
         </div>
       </div>
+    </div>
+  </div>;
+}
+
+// ── MISSING PHONES ────────────────────────────────────
+function MissingPhones({db,user}){
+  const {data:students,loading}=useDB("students",{order:"name",eq:{status:"Active"}});
+  const [fClass,setFClass]=useState("All");
+  const {data:classes}=useDB("classes",{order:"name"});
+  if(loading) return <Spinner/>;
+  const missing=(students||[]).filter(s=>!s.phone||!s.phone.trim());
+  const filtered=fClass==="All"?missing:missing.filter(s=>s.class_name===fClass);
+  const byClass={};
+  missing.forEach(s=>{byClass[s.class_name]=(byClass[s.class_name]||0)+1;});
+  return <div>
+    <div style={{fontSize:21,fontWeight:900,fontFamily:"'Playfair Display',serif",marginBottom:4}}>📵 Wanafunzi Bila Namba ya Simu</div>
+    <div style={{color:C.muted,fontSize:13,marginBottom:16}}>Wanafunzi hawa hawatapokea SMS (homework, ada, mahudhurio) mpaka namba ya simu ya mzazi ijazwe.</div>
+
+    <div className="flex gap-8 mb-14 flex-wrap">
+      <div className="stat-card" style={{borderTop:`3px solid ${C.red}`,flex:1,textAlign:"center"}}>
+        <div style={{fontSize:22,fontWeight:900,color:C.red}}>{missing.length}</div>
+        <div style={{fontSize:12,color:C.textSoft}}>Jumla Bila Namba</div>
+      </div>
+      <div className="stat-card" style={{borderTop:`3px solid ${C.green}`,flex:1,textAlign:"center"}}>
+        <div style={{fontSize:22,fontWeight:900,color:C.green}}>{(students||[]).length-missing.length}</div>
+        <div style={{fontSize:12,color:C.textSoft}}>Wenye Namba</div>
+      </div>
+    </div>
+
+    <div className="mb-12">
+      <select className="input" style={{width:200}} value={fClass} onChange={e=>setFClass(e.target.value)}>
+        <option>All</option>
+        {classes.map(c=><option key={c.id}>{c.name}</option>)}
+      </select>
+    </div>
+
+    <div className="card">
+      <table className="table">
+        <thead><tr>{["Jina","Darasa","Mzazi"].map(h=><th key={h}>{h}</th>)}</tr></thead>
+        <tbody>{filtered.map(s=><tr key={s.id}>
+          <td style={{fontWeight:700}}>{s.name}</td>
+          <td>{s.class_name}</td>
+          <td>{s.parent||"—"}</td>
+        </tr>)}</tbody>
+      </table>
+      {filtered.length===0 && <div style={{padding:16,textAlign:"center",color:C.muted}}>{missing.length===0?"🎉 Wanafunzi wote wana namba ya simu!":"Hakuna kwenye darasa hili."}</div>}
     </div>
   </div>;
 }
@@ -4866,35 +4919,97 @@ function StudentDiary({db,user}){
 
 // ── HOMEWORK ──────────────────────────────────────────
 function Homework({db,user}){
+  const role=user?.profile?.role||"admin";
+  const isTeacher=role==="teacher";
   const {data:classes}=useDB("classes",{order:"name"});
   const {data:subjects}=useDB("subjects",{order:"name"});
   const [hw,setHw]=useState([]);const [loading,setLoading]=useState(true);
   const [modal,setModal]=useState(false);const [fClass,setFClass]=useState("All");
   const [hwSearch,setHwSearch]=useState("");
+  const [rejectTarget,setRejectTarget]=useState(null);
+  const [rejectNote,setRejectNote]=useState("");
+  const [busyId,setBusyId]=useState(null);
   const [form,setForm]=useState({class_name:"",subject_id:"",title:"",description:"",due_date:"",assigned_date:fmtDate(),created_by:user.id});
   const load=async()=>{setLoading(true);const{data}=await db.from("homework").select("*,subjects(name)").order("due_date",{ascending:true});setHw(data||[]);setLoading(false);};
   useEffect(()=>{load();},[]);
+
+  const sendHomeworkSMS=async(h)=>{
+    const{data:classStudents}=await db.from("students").select("name,parent,phone").eq("class_name",h.class_name).eq("status","Active");
+    let sent=0;const targets=(classStudents||[]).filter(s=>s.phone);
+    for(const st of targets){
+      const msg=`Dear ${st.parent||"Parent"}, ${st.name}'s class has been assigned homework: "${h.title}". Due date: ${h.due_date}. Najman School`;
+      try{const rh=await sendSMS(st.phone,msg);if(rh.ok)sent++;}catch{}
+    }
+    return {sent,total:targets.length};
+  };
+
   const save=async()=>{
     if(!form.title.trim()||!form.class_name)return;
-    await db.from("homework").insert(form);
-
-    // ── AUTO: SMS homework notification to parents of class ──
-
-    if(form.due_date){
-      const{data:classStudents}=await db.from("students").select("name,parent,phone").eq("class_name",form.class_name).eq("status","Active");
-      let sent=0;
-      for(const st of(classStudents||[]).filter(s=>s.phone)){
-        const msg=`Dear ${st.parent||"Parent"}, ${st.name}'s class has been assigned homework: "${form.title}". Due date: ${form.due_date}. Najman School`;
-        try{const rh=await sendSMS(st.phone,msg);if(rh.ok)sent++;}catch{}
+    if(isTeacher){
+      // Teacher: goes to Admin for approval first, no SMS yet
+      const d={...form,teacher_user_id:user.id,status:"pending_review",created_by:user.id};
+      await db.from("homework").insert(d);
+      // Notify admin via SMS that a homework is pending review
+      const{data:settings}=await db.from("settings").select("admin_phone").eq("id",1).single();
+      if(settings?.admin_phone){
+        const teacherName=user?.profile?.full_name||user?.email||"Mwalimu";
+        sendSMS(settings.admin_phone,`Homework mpya kutoka ${teacherName} - Darasa ${form.class_name} - inasubiri kupitishwa.`).catch(()=>{});
       }
-      if(sent>0)alert(`✅ Homework assigned! 📲 ${sent} SMS sent to parents of ${form.class_name}`);
+      alert("✅ Homework imetumwa kwa Admin kwa idhini!");
+    }else{
+      // Admin: goes out immediately, same as before
+      const d={...form,status:"approved_sent",reviewed_by:getUserName(user),reviewed_at:new Date().toISOString()};
+      const {data:inserted}=await db.from("homework").insert(d).select().single();
+      if(form.due_date && inserted){
+        const {sent,total}=await sendHomeworkSMS(inserted);
+        await db.from("homework").update({recipients_count:total,sent_count:sent}).eq("id",inserted.id);
+        if(sent>0)alert(`✅ Homework assigned! 📲 ${sent} SMS sent to parents of ${form.class_name}`);
+      }
     }
-
     load();setModal(false);setForm({class_name:"",subject_id:"",title:"",description:"",due_date:"",assigned_date:fmtDate(),created_by:user.id});
   };
+
+  const approve=async(h)=>{
+    setBusyId(h.id);
+    const {sent,total}=await sendHomeworkSMS(h);
+    await db.from("homework").update({
+      status:"approved_sent",
+      reviewed_by:getUserName(user),
+      reviewed_at:new Date().toISOString(),
+      recipients_count:total,
+      sent_count:sent
+    }).eq("id",h.id);
+    setBusyId(null);
+    load();
+    alert(`✅ Homework imetumwa kwa wazazi ${sent}/${total}!`);
+  };
+
+  const reject=async()=>{
+    if(!rejectTarget)return;
+    await db.from("homework").update({
+      status:"rejected",
+      admin_note:rejectNote,
+      reviewed_by:getUserName(user),
+      reviewed_at:new Date().toISOString()
+    }).eq("id",rejectTarget.id);
+    setRejectTarget(null);setRejectNote("");
+    load();
+  };
+
   const del=async(id)=>{if(!confirm("Delete?"))return;await db.from("homework").delete().eq("id",id);load();};
   const isOverdue=hw=>hw.due_date&&hw.due_date<fmtDate();
-  const filtered=hw.filter(h=>(fClass==="All"||h.class_name===fClass)&&(h.title.toLowerCase().includes(hwSearch.toLowerCase())||h.class_name?.toLowerCase().includes(hwSearch.toLowerCase())));
+
+  // Teachers only see their own homework; Admin sees everything
+  const visible=isTeacher?hw.filter(h=>h.teacher_user_id===user.id):hw;
+  const pending=hw.filter(h=>h.status==="pending_review");
+  const filtered=visible.filter(h=>(fClass==="All"||h.class_name===fClass)&&(h.title.toLowerCase().includes(hwSearch.toLowerCase())||h.class_name?.toLowerCase().includes(hwSearch.toLowerCase())));
+
+  const statusBadge=(h)=>{
+    if(h.status==="pending_review")return <span style={{background:`${C.accent}22`,color:C.accent,borderRadius:20,padding:"2px 8px",fontSize:13,fontWeight:700}}>Inasubiri Idhini</span>;
+    if(h.status==="rejected")return <span style={{background:`${C.red}22`,color:C.red,borderRadius:20,padding:"2px 8px",fontSize:13,fontWeight:700}}>Imekataliwa</span>;
+    return <span style={{background:isOverdue(h)?`${C.red}22`:`${C.green}22`,color:isOverdue(h)?C.red:C.green,borderRadius:20,padding:"2px 8px",fontSize:15,fontWeight:700}}>{isOverdue(h)?"Overdue":`Due: ${h.due_date||"—"}`}</span>;
+  };
+
   return <div>
     <div className="flex justify-between align-center mb-16 flex-wrap gap-8">
       <div style={{fontSize:21,fontWeight:900,fontFamily:"'Playfair Display',serif"}}>📚 Homework</div>
@@ -4910,25 +5025,48 @@ function Homework({db,user}){
         <button className="btn" onClick={()=>setModal(true)}>+ Homework</button>
       </div>
     </div>
+
+    {!isTeacher && pending.length>0 && <div style={{marginBottom:20}}>
+      <div style={{fontWeight:900,fontSize:15,marginBottom:10,color:C.accent}}>⏳ Zinazosubiri Idhini ({pending.length})</div>
+      {pending.map(h=><div key={h.id} className="card" style={{marginBottom:10,borderLeft:`4px solid ${C.accent}`}}>
+        <div className="flex justify-between align-center mb-6">
+          <div>
+            <div style={{fontWeight:800,fontSize:15}}>{h.title}</div>
+            <div style={{fontSize:13,color:C.muted}}>{h.class_name} • {h.subjects?.name||"General"}</div>
+          </div>
+          {statusBadge(h)}
+        </div>
+        {h.description&&<div style={{fontSize:13,color:C.textSoft,marginBottom:6}}>{h.description}</div>}
+        <div style={{fontSize:12,color:C.muted,marginBottom:8}}>Due: {h.due_date||"—"}</div>
+        <div className="flex gap-8">
+          <button className="btn-ghost" style={{color:C.red}} onClick={()=>setRejectTarget(h)}>❌ Kataa</button>
+          <button className="btn" disabled={busyId===h.id} onClick={()=>approve(h)}>{busyId===h.id?"Inatuma...":"✅ Idhinisha na Tuma"}</button>
+        </div>
+      </div>)}
+    </div>}
+
     {loading?<div className="spinner"></div>:<div>
-      {filtered.map(h=><div key={h.id} className="card" style={{borderLeft:`4px solid ${isOverdue(h)?C.red:h.due_date===fmtDate()?C.accent:C.green}`,marginBottom:10}}>
+      {filtered.filter(h=>h.status!=="pending_review"||isTeacher).map(h=><div key={h.id} className="card" style={{borderLeft:`4px solid ${h.status==="rejected"?C.red:h.status==="pending_review"?C.accent:isOverdue(h)?C.red:h.due_date===fmtDate()?C.accent:C.green}`,marginBottom:10}}>
         <div className="flex justify-between align-center mb-6">
           <div>
             <div style={{fontWeight:800,fontSize:15}}>{h.title}</div>
             <div style={{fontSize:15,color:C.muted}}>{h.class_name} • {h.subjects?.name||"General"}</div>
           </div>
           <div className="flex gap-6 align-center">
-            <span style={{background:isOverdue(h)?`${C.red}22`:`${C.green}22`,color:isOverdue(h)?C.red:C.green,borderRadius:20,padding:"2px 8px",fontSize:15,fontWeight:700}}>{isOverdue(h)?"Overdue":`Due: ${h.due_date||"—"}`}</span>
+            {statusBadge(h)}
             <button className="btn btn-red" style={{padding:"2px 7px",fontSize:15}} onClick={()=>del(h.id)}>🗑️</button>
           </div>
         </div>
         {h.description&&<div style={{fontSize:15,color:C.textSoft,lineHeight:1.7}}>{h.description}</div>}
         <div style={{fontSize:15,color:C.muted,marginTop:6}}>Assigned: {h.assigned_date}</div>
+        {h.status==="rejected"&&h.admin_note&&<div style={{marginTop:6,fontSize:13,color:C.red}}>Sababu ya kukataliwa: {h.admin_note}</div>}
+        {h.status==="approved_sent"&&h.sent_count>0&&<div style={{marginTop:6,fontSize:12,color:C.green}}>📲 Imetumwa kwa wazazi {h.sent_count}/{h.recipients_count}</div>}
       </div>)}
       {filtered.length===0&&<div className="card" style={{textAlign:"center",padding:36,color:C.muted}}>No homework assigned yet</div>}
     </div>}
     {modal&&<div className="overlay"><div className="modal">
       <div style={{fontWeight:900,fontSize:16,marginBottom:14,fontFamily:"'Playfair Display',serif"}}>📚 Assign Homework</div>
+      {isTeacher&&<div style={{marginBottom:12,padding:10,background:"rgba(245,166,35,.08)",borderRadius:8,fontSize:12,color:C.textSoft}}>ℹ️ Kama Mwalimu, homework yako itasubiri idhini ya Admin kabla ya kutumwa kwa wazazi.</div>}
       <div className="grid-2">
         <div><label className="label">Class *</label><select className="input" value={form.class_name} onChange={e=>setForm(f=>({...f,class_name:e.target.value}))}><option value="">-- Select --</option>{classes.map(c=><option key={c.id}>{c.name}</option>)}</select></div>
         <div><label className="label">Subject</label><select className="input" value={form.subject_id} onChange={e=>setForm(f=>({...f,subject_id:e.target.value}))}><option value="">-- Select --</option>{subjects.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
@@ -4937,7 +5075,19 @@ function Homework({db,user}){
         <div><label className="label">Due Date</label><input className="input" type="date" value={form.due_date} onChange={e=>setForm(f=>({...f,due_date:e.target.value}))}/></div>
         <div className="grid-full"><label className="label">Description</label><textarea className="input" style={{height:70,resize:"vertical"}} value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))}/></div>
       </div>
-      <div className="flex gap-8 justify-between" style={{marginTop:14}}><button className="btn-ghost" onClick={()=>setModal(false)}>Cancel</button><button className="btn" onClick={save}>Assign</button></div>
+      <div className="flex gap-8 justify-between" style={{marginTop:14}}><button className="btn-ghost" onClick={()=>setModal(false)}>Cancel</button><button className="btn" onClick={save}>{isTeacher?"Tuma kwa Admin":"Assign"}</button></div>
+    </div></div>}
+
+    {rejectTarget && <div className="overlay"><div className="modal">
+      <div style={{fontWeight:900,fontSize:16,marginBottom:10}}>❌ Kataa Homework — {rejectTarget.class_name}</div>
+      <div className="mb-12">
+        <label className="label">Sababu (itaonekana kwa mwalimu)</label>
+        <textarea className="input" rows={3} value={rejectNote} onChange={e=>setRejectNote(e.target.value)} placeholder="k.m. Tafadhali ongeza maelezo zaidi..."/>
+      </div>
+      <div className="flex gap-8 justify-between">
+        <button className="btn-ghost" onClick={()=>{setRejectTarget(null);setRejectNote("");}}>Ghairi</button>
+        <button className="btn btn-red" onClick={reject}>Thibitisha Kukataa</button>
+      </div>
     </div></div>}
   </div>;
 }
@@ -5151,6 +5301,8 @@ function Dashboard({db,user,setPage}){
   const [upcomingExams,setUpcomingExams]=useState([]);
   const [loading,setLoading]=useState(true);
   const [clock,setClock]=useState(new Date());
+  const [adminPhoneSet,setAdminPhoneSet]=useState(true);
+  const [pendingHomework,setPendingHomework]=useState(0);
   const MONTHS_S=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
   // Live clock - updates every second
@@ -5207,6 +5359,17 @@ function Dashboard({db,user,setPage}){
     setLoading(false);
   })();},[]);
 
+  useEffect(()=>{
+    const role=user?.profile?.role||"admin";
+    if(role!=="admin") return;
+    db.from("settings").select("admin_phone").eq("id",1).single().then(({data})=>{
+      setAdminPhoneSet(!!(data?.admin_phone&&data.admin_phone.trim()));
+    });
+    db.from("homework").select("*",{count:"exact",head:true}).eq("status","pending_review").then(({count})=>{
+      setPendingHomework(count||0);
+    });
+  },[]);
+
   if(loading)return<Spinner/>;
 
   const collectionPct=stats.fees>0?Math.min(100,Math.round(stats.paid/stats.fees*100)):0;
@@ -5252,6 +5415,14 @@ function Dashboard({db,user,setPage}){
   );
 
   return<div>
+    {!adminPhoneSet && <div style={{background:"rgba(239,68,68,.12)",border:"1px solid rgba(239,68,68,.4)",borderRadius:12,padding:"12px 16px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+      <div style={{fontSize:13,color:"#fca5a5"}}>⚠️ Namba yako ya simu haijawekwa — hutapata SMS za arifa (mfano: homework inayosubiri idhini).</div>
+      <button className="btn-ghost" style={{fontSize:12,padding:"5px 12px"}} onClick={()=>setPage("sms_settings")}>Weka Sasa</button>
+    </div>}
+    {pendingHomework>0 && <div style={{background:"rgba(245,166,35,.12)",border:"1px solid rgba(245,166,35,.4)",borderRadius:12,padding:"12px 16px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,cursor:"pointer"}} onClick={()=>setPage("homework")}>
+      <div style={{fontSize:13,color:"#fbbf24"}}>📝 Kuna {pendingHomework} homework {pendingHomework===1?"inasubiri":"zinasubiri"} idhini yako.</div>
+      <span style={{fontSize:12,color:"#fbbf24",fontWeight:700}}>Angalia →</span>
+    </div>}
     {/* Header Banner */}
     <div style={{background:"linear-gradient(135deg,#1e3a5f,#1a3050)",borderRadius:16,padding:"20px 26px",marginBottom:18,position:"relative",overflow:"hidden"}}>
       <div style={{position:"absolute",top:-20,right:-20,width:140,height:140,background:"rgba(245,166,35,.08)",borderRadius:"50%"}}/>
