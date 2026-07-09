@@ -868,14 +868,22 @@ function AdminContracts({ db, user }) {
       admin_signed_at: new Date().toISOString(),
       admin_signature_name: form.admin_signature_name || getUserName(user),
     };
-    await db.from("teacher_contracts").update(d).eq("id", sel.id);
+    delete d.id;
+    delete d.created_at;
+    const { error: updErr } = await db.from("teacher_contracts").update(d).eq("id", sel.id);
+    if (updErr) {
+      alert("❌ Hitilafu kuhifadhi mkataba: " + updErr.message);
+      console.error("confirmContract update error:", updErr);
+      return;
+    }
 
     // Sync salary/position to linked staff record, if one was selected
     if (form.staff_id) {
-      await db.from("staff").update({
+      const { error: staffErr } = await db.from("staff").update({
         salary: Number(form.basic_salary) || 0,
         role: form.position || undefined,
       }).eq("id", form.staff_id);
+      if (staffErr) console.error("staff sync error:", staffErr);
     }
 
     // Notify the teacher by SMS that their contract is confirmed
@@ -890,7 +898,14 @@ function AdminContracts({ db, user }) {
 
   const saveOnly = async () => {
     const d = { ...form, basic_salary: Number(form.basic_salary) || 0, allowances: Number(form.allowances) || 0, leave_days: Number(form.leave_days) || 28 };
-    await db.from("teacher_contracts").update(d).eq("id", sel.id);
+    delete d.id;
+    delete d.created_at;
+    const { error } = await db.from("teacher_contracts").update(d).eq("id", sel.id);
+    if (error) {
+      alert("❌ Hitilafu kuhifadhi: " + error.message);
+      console.error("saveOnly error:", error);
+      return;
+    }
     refresh();
     setModal(false);
   };
