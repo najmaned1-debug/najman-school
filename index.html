@@ -586,8 +586,8 @@ function Sidebar({page, setPage, user, onLogout, open}) {
 // ── PDF GENERATOR FOR CONTRACT (print-based, like printPayslip) ──
 const printContractPDF = (c) => {
   const w = window.open("", "_blank");
-  const typeLabel = c.contract_type === "Temporary" ? "TEMPORARY EMPLOYMENT CONTRACT" : "PERMANENT EMPLOYMENT CONTRACT";
-  w.document.write(`<html><head><title>Employment Contract - ${c.full_name || ""}</title>
+  const typeLabel = c.contract_type === "Temporary" ? "MKATABA WA AJIRA WA MUDA MAALUM" : "MKATABA WA AJIRA WA KUDUMU";
+  w.document.write(`<html><head><title>Mkataba wa Ajira - ${c.full_name || ""}</title>
   <style>
     body{font-family:Georgia,'Times New Roman',serif;max-width:720px;margin:auto;padding:30px;font-size:13px;color:#1a1a1a;line-height:1.6;}
     .hd{text-align:center;border-bottom:3px solid #e8890a;padding-bottom:14px;margin-bottom:20px;}
@@ -598,8 +598,8 @@ const printContractPDF = (c) => {
     .row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dotted #eee;}
     .row b{color:#444;}
     p.body-text{margin:6px 0;text-align:justify;}
-    .sig-block{display:flex;justify-content:space-between;margin-top:50px;}
-    .sig{width:45%;text-align:center;}
+    .sig-block{display:flex;justify-content:space-between;margin-top:40px;flex-wrap:wrap;}
+    .sig{width:45%;text-align:center;margin-top:20px;}
     .sig .line{border-top:1px solid #333;margin-top:40px;padding-top:6px;font-size:12px;}
     .footer{font-size:10px;text-align:center;margin-top:30px;color:#999;border-top:1px solid #eee;padding-top:10px;}
     @media print{ body{padding:10px;} }
@@ -610,52 +610,84 @@ const printContractPDF = (c) => {
     <div class="title">${typeLabel}</div>
   </div>
 
-  <h3>1. Parties</h3>
-  <p class="body-text">This Employment Contract is entered into between <b>Najman Education Centre</b> ("the Employer") and <b>${c.full_name || "—"}</b> ("the Employee"), effective from <b>${c.contract_start_date || "—"}</b>.</p>
+  <p class="body-text">Huu ni mkataba wa ajira kati ya <b>Najman Education Centre</b> ("Mwajiri") na <b>${c.full_name || "—"}</b> ("Mfanyakazi"), unaoanza tarehe <b>${c.contract_start_date || "—"}</b>.</p>
 
-  <h3>2. Employee Details</h3>
-  <div class="row"><span>Full Name</span><b>${c.full_name || "—"}</b></div>
-  <div class="row"><span>National ID</span><b>${c.national_id || "—"}</b></div>
-  <div class="row"><span>Phone</span><b>${c.phone ? "+" + c.phone : "—"}</b></div>
-  <div class="row"><span>Address</span><b>${c.address || "—"}</b></div>
-  <div class="row"><span>Education / Qualification</span><b>${c.qualification || "—"} (${c.education_level || "—"})</b></div>
+  <h3>1. Taarifa za Pande Zote</h3>
+  <div class="row"><span>Jina Kamili</span><b>${c.full_name || "—"}</b></div>
+  <div class="row"><span>Namba ya Kitambulisho (NIDA)</span><b>${c.national_id || "—"}</b></div>
+  <div class="row"><span>Namba ya Simu</span><b>${c.phone ? "+" + c.phone : "—"}</b></div>
+  <div class="row"><span>Anuani / Makazi</span><b>${c.address || "—"}</b></div>
+  <div class="row"><span>Elimu / Taaluma</span><b>${c.qualification || "—"} (${c.education_level || "—"})</b></div>
 
-  <h3>3. Position & Employment Terms</h3>
-  <div class="row"><span>Position</span><b>${c.position || "—"}</b></div>
-  <div class="row"><span>Department</span><b>${c.department || "—"}</b></div>
-  <div class="row"><span>Contract Type</span><b>${c.contract_type || "—"}</b></div>
-  <div class="row"><span>Contract Duration</span><b>${c.contract_duration || "—"}</b></div>
-  <div class="row"><span>Probation Period</span><b>${c.probation_period || "—"}</b></div>
-  <div class="row"><span>Start Date</span><b>${c.contract_start_date || "—"}</b></div>
-  <div class="row"><span>End Date</span><b>${c.contract_end_date || "Ongoing"}</b></div>
-  <div class="row"><span>Working Hours</span><b>${c.working_hours || "—"}</b></div>
+  <h3>2. Nafasi ya Kazi</h3>
+  <div class="row"><span>Wadhifa</span><b>${c.position || "—"}</b></div>
+  <div class="row"><span>Idara</span><b>${c.department || "—"}</b></div>
+  <div class="row"><span>Aina ya Mkataba</span><b>${c.contract_type || "—"}</b></div>
 
-  <h3>4. Remuneration</h3>
-  <div class="row"><span>Basic Salary</span><b>TZS ${Number(c.basic_salary || 0).toLocaleString()}</b></div>
-  <div class="row"><span>Salary Payment Date</span><b>${c.salary_payment_date || "—"}</b></div>
-  <div class="row"><span>Annual Leave Days</span><b>${c.leave_days || "—"} days</b></div>
+  <h3>3. Tarehe ya Kuanza Kazi</h3>
+  <div class="row"><span>Tarehe ya Kuanza</span><b>${c.contract_start_date || "—"}</b></div>
+  <div class="row"><span>Tarehe ya Kumaliza</span><b>${c.contract_end_date || "Inaendelea"}</b></div>
 
-  <h3>5. Duties & Responsibilities</h3>
-  <p class="body-text">${(c.responsibilities || "As assigned by the School Administration.").replace(/\n/g, "<br/>")}</p>
+  <h3>4. Kipindi cha Majaribio</h3>
+  <p class="body-text">Mfanyakazi atakuwa kwenye kipindi cha majaribio cha <b>${c.probation_period || "—"}</b> kuanzia tarehe ya kuanza kazi.</p>
 
-  <h3>6. Termination</h3>
-  <p class="body-text">Either party may terminate this contract by providing <b>${c.termination_notice || "30 days"}</b> written notice, subject to the school's employment policies and Tanzanian labour law.</p>
+  <h3>5. Muda wa Kazi</h3>
+  <div class="row"><span>Muda wa Mkataba</span><b>${c.contract_duration || "—"}</b></div>
+  <div class="row"><span>Masaa ya Kazi</span><b>${c.working_hours || "—"}</b></div>
 
-  <h3>7. Next of Kin</h3>
-  <div class="row"><span>Name</span><b>${c.next_of_kin_name || "—"}</b></div>
-  <div class="row"><span>Relationship</span><b>${c.next_of_kin_relationship || "—"}</b></div>
-  <div class="row"><span>Phone</span><b>${c.next_of_kin_phone ? "+" + c.next_of_kin_phone : "—"}</b></div>
+  <h3>6. Mshahara na Malipo</h3>
+  <div class="row"><span>Mshahara wa Msingi</span><b>TZS ${Number(c.basic_salary || 0).toLocaleString()}</b></div>
+  <div class="row"><span>Tarehe ya Malipo</span><b>${c.salary_payment_date || "—"}</b></div>
+
+  <h3>7. Posho</h3>
+  <p class="body-text">${Number(c.allowances || 0) > 0 ? `Mfanyakazi atalipwa posho ya <b>TZS ${Number(c.allowances).toLocaleString()}</b> kwa mwezi, kwa mujibu wa masharti ya shule.` : "Hakuna posho maalum iliyowekwa kwa nafasi hii kwa sasa."}</p>
+
+  <h3>8. Majukumu ya Mwalimu</h3>
+  <p class="body-text">${(c.responsibilities || "Kama atakavyoelekezwa na Uongozi wa Shule.").replace(/\n/g, "<br/>")}</p>
+
+  <h3>9. Nidhamu</h3>
+  <p class="body-text">Mfanyakazi anatakiwa kuzingatia nidhamu ya kazi, kanuni na taratibu za shule wakati wote. Uvunjifu wa nidhamu utashughulikiwa kwa mujibu wa kanuni za shule na sheria za kazi za Tanzania.</p>
+
+  <h3>10. Likizo</h3>
+  <p class="body-text">Mfanyakazi anastahili likizo ya siku <b>${c.leave_days || "—"}</b> kwa mwaka, kwa mujibu wa sheria za kazi za Tanzania na taratibu za shule.</p>
+
+  <h3>11. Ruhusa</h3>
+  <p class="body-text">Mfanyakazi anatakiwa kuomba ruhusa mapema kwa maandishi kwa Uongozi wa Shule kabla ya kutokuwepo kazini, isipokuwa dharura za kiafya au nyingine za lazima ambazo zitatakiwa kutolewa taarifa haraka iwezekanavyo.</p>
+
+  <h3>12. Siri za Shule</h3>
+  <p class="body-text">Mfanyakazi hatatoa au kutumia taarifa za siri za shule, wanafunzi, wafanyakazi wenzake, au uendeshaji wa shule kwa mtu au taasisi yoyote nje ya shule bila idhini ya Uongozi.</p>
+
+  <h3>13. Mali za Shule</h3>
+  <p class="body-text">Mfanyakazi atatunza mali zote za shule alizokabidhiwa kwa ajili ya kazi zake, na atazirudisha kwa hali nzuri endapo ajira itasitishwa au kumalizika.</p>
+
+  <h3>14. Tathmini ya Kazi</h3>
+  <p class="body-text">Utendaji wa mfanyakazi utatathminiwa mara kwa mara na Uongozi wa Shule kulingana na malengo na viwango vya utendaji vilivyowekwa.</p>
+
+  <h3>15. Kusitisha Ajira</h3>
+  <p class="body-text">Pande zote zitatoa taarifa ya maandishi ya <b>${c.termination_notice || "siku 30"}</b> kabla ya kusitisha ajira, isipokuwa pale sheria inaporuhusu kusitisha mara moja kutokana na kosa kubwa la kinidhamu. Badala ya notisi, mshahara wa kipindi cha notisi unaweza kulipwa. Mfanyakazi atakabidhi mali zote za shule kabla ya kuondoka.</p>
+
+  <h3>16. Kanuni za Shule</h3>
+  <p class="body-text">Mfanyakazi anakubali kuzingatia na kufuata kanuni, taratibu, na sera zote za Najman Education Centre kama zilivyowekwa na Uongozi, ikiwemo mabadiliko yoyote yatakayofanyika baadaye.</p>
+
+  <h3>17. Tamko na Saini</h3>
+  <p class="body-text">Kwa kutia saini hapa chini, pande zote mbili zinathibitisha kuwa zimesoma, zimeelewa, na zinakubaliana na masharti yote yaliyoainishwa kwenye mkataba huu.</p>
 
   <div class="sig-block">
     <div class="sig">
-      <div class="line">${c.teacher_signature_name || c.full_name || "Employee"}<br/><span style="color:#999;">Employee — ${c.teacher_signed_at ? new Date(c.teacher_signed_at).toLocaleDateString("en-GB") : "Date"}</span></div>
+      <div class="line">${c.teacher_signature_name || c.full_name || "Mfanyakazi"}<br/><span style="color:#999;">Mfanyakazi — ${c.teacher_signed_at ? new Date(c.teacher_signed_at).toLocaleDateString("en-GB") : "Tarehe"}</span></div>
     </div>
     <div class="sig">
-      <div class="line">${c.admin_signature_name || "Administrator"}<br/><span style="color:#999;">For Najman Education Centre — ${c.admin_signed_at ? new Date(c.admin_signed_at).toLocaleDateString("en-GB") : "Date"}</span></div>
+      <div class="line">${c.admin_signature_name || "Msimamizi"}<br/><span style="color:#999;">Kwa niaba ya Najman Education Centre — ${c.admin_signed_at ? new Date(c.admin_signed_at).toLocaleDateString("en-GB") : "Tarehe"}</span></div>
+    </div>
+    <div class="sig">
+      <div class="line">${c.witness1_name || "Shahidi 1"}<br/><span style="color:#999;">Shahidi 1</span></div>
+    </div>
+    <div class="sig">
+      <div class="line">${c.witness2_name || "Shahidi 2"}<br/><span style="color:#999;">Shahidi 2</span></div>
     </div>
   </div>
 
-  <div class="footer">Najman Education Centre — School Management System v7.0 &nbsp;•&nbsp; Generated ${new Date().toLocaleDateString("en-GB")}</div>
+  <div class="footer">Najman Education Centre — School Management System v7.0 &nbsp;•&nbsp; Imetengenezwa ${new Date().toLocaleDateString("en-GB")}</div>
   </body></html>`);
   w.document.close();
   setTimeout(() => w.print(), 500);
@@ -805,6 +837,9 @@ function AdminContracts({ db, user }) {
       position: c.position || "",
       department: c.department || "",
       basic_salary: c.basic_salary || "",
+      allowances: c.allowances || "",
+      witness1_name: c.witness1_name || "",
+      witness2_name: c.witness2_name || "",
       salary_payment_date: c.salary_payment_date || "25th of every month",
       contract_duration: c.contract_duration || (c.contract_type === "Temporary" ? "6 Months" : "Permanent"),
       probation_period: c.probation_period || "3 Months",
@@ -827,6 +862,7 @@ function AdminContracts({ db, user }) {
     const d = {
       ...form,
       basic_salary: Number(form.basic_salary) || 0,
+      allowances: Number(form.allowances) || 0,
       leave_days: Number(form.leave_days) || 28,
       status: "confirmed",
       admin_signed_at: new Date().toISOString(),
@@ -853,7 +889,7 @@ function AdminContracts({ db, user }) {
   };
 
   const saveOnly = async () => {
-    const d = { ...form, basic_salary: Number(form.basic_salary) || 0, leave_days: Number(form.leave_days) || 28 };
+    const d = { ...form, basic_salary: Number(form.basic_salary) || 0, allowances: Number(form.allowances) || 0, leave_days: Number(form.leave_days) || 28 };
     await db.from("teacher_contracts").update(d).eq("id", sel.id);
     refresh();
     setModal(false);
@@ -936,6 +972,7 @@ function AdminContracts({ db, user }) {
         <div><Field label="Wadhifa / Position *" value={form.position} onChange={v => F("position", v)} placeholder="k.m. Class Teacher" /></div>
         <div><Field label="Idara / Department" value={form.department} onChange={v => F("department", v)} placeholder="k.m. Primary Section" /></div>
         <div><Field label="Mshahara wa Msingi (TZS) *" value={form.basic_salary} onChange={v => F("basic_salary", v)} type="number" /></div>
+        <div><Field label="Posho (TZS)" value={form.allowances} onChange={v => F("allowances", v)} type="number" placeholder="k.m. 50000" /></div>
         <div><Field label="Tarehe ya Malipo" value={form.salary_payment_date} onChange={v => F("salary_payment_date", v)} placeholder="k.m. 25th of every month" /></div>
         <div><Field label="Muda wa Mkataba" value={form.contract_duration} onChange={v => F("contract_duration", v)} placeholder="k.m. 12 Months" /></div>
         <div><Field label="Kipindi cha Majaribio" value={form.probation_period} onChange={v => F("probation_period", v)} placeholder="k.m. 3 Months" /></div>
@@ -949,6 +986,13 @@ function AdminContracts({ db, user }) {
         <label className="label">Majukumu / Responsibilities</label>
         <textarea className="input" rows={4} value={form.responsibilities || ""} onChange={e => F("responsibilities", e.target.value)} placeholder="Andika majukumu makuu ya kazi hii..." />
       </div>
+
+      <div style={{ fontWeight: 800, fontSize: 13, margin: "14px 0 8px", color: C.accent }}>MASHAHIDI</div>
+      <div className="grid-2">
+        <div><Field label="Jina la Shahidi 1" value={form.witness1_name} onChange={v => F("witness1_name", v)} /></div>
+        <div><Field label="Jina la Shahidi 2" value={form.witness2_name} onChange={v => F("witness2_name", v)} /></div>
+      </div>
+
       <Field label="Jina la Msimamizi (Saini)" value={form.admin_signature_name} onChange={v => F("admin_signature_name", v)} />
 
       <div className="flex gap-8 justify-between" style={{ marginTop: 16 }}>
