@@ -1121,6 +1121,8 @@ function TeacherFeeCollect({db,user}){
   const [payDate,setPayDate]=React.useState(fmtDate());
   const [method,setMethod]=React.useState("Cash");
   const [feeType,setFeeType]=React.useState("Term Fee");
+  const [term,setTerm]=React.useState("Term 1");
+  const [note,setNote]=React.useState("");
   const [saving,setSaving]=React.useState(false);
   const [done,setDone]=React.useState(null);
   const [myRecent,setMyRecent]=React.useState([]);
@@ -1188,8 +1190,8 @@ function TeacherFeeCollect({db,user}){
       amount:Number(amount),
       month:MONTHS[new Date(payDate).getMonth()],
       fee_type:feeType,
-      term:"Term 1",
-      note:`Recorded by teacher: ${teacherName}`,
+      term:term,
+      note:note||`Recorded by teacher: ${teacherName}`,
       method:method,
       payment_date:payDate,
       created_by:user.id,
@@ -1207,7 +1209,7 @@ function TeacherFeeCollect({db,user}){
     }
     printTeacherReceipt(selected,amount,method,feeType,ref,d.payment_date);
     setDone({name:selected.name,amount,ref,student:selected,method,feeType,payDate:d.payment_date});
-    setSelected(null);setAmount("");setPayDate(fmtDate());setSaving(false);
+    setSelected(null);setAmount("");setPayDate(fmtDate());setNote("");setTerm("Term 1");setSaving(false);
     loadMine();
   };
 
@@ -1241,11 +1243,17 @@ function TeacherFeeCollect({db,user}){
           <option>Term Fee</option><option>Admission Fee</option><option>Uniform</option><option>Transport</option><option>Meals</option><option>Other</option>
         </select>
       </div>
+      <div className="mb-10"><label className="label">Term</label>
+        <select className="input" value={term} onChange={e=>setTerm(e.target.value)}>
+          <option>Term 1</option><option>Term 2</option><option>Term 3</option>
+        </select>
+      </div>
       <div className="mb-12"><label className="label">Payment Method</label>
         <select className="input" value={method} onChange={e=>setMethod(e.target.value)}>
           <option>Cash</option><option>M-Pesa</option><option>Tigo Pesa</option><option>Airtel Money</option><option>Bank</option>
         </select>
       </div>
+      <div className="mb-12"><label className="label">Note (Hiari)</label><input className="input" value={note} onChange={e=>setNote(e.target.value)} placeholder="Maelezo ya ziada..."/></div>
       <div className="flex gap-8">
         <button className="btn" onClick={()=>{setSelected(null);setSearch("");}}>✖ Ghairi</button>
         <button className="btn btn-orange" style={{flex:1}} onClick={collect} disabled={saving}>{saving?"⏳ Collecting...":"💰 Collect"}</button>
