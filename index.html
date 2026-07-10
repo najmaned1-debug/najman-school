@@ -1542,7 +1542,7 @@ function Students({db,user}) {
       admission_date: form.admission_date||fmtDate(),
       status: form.status||"Active",
       term_fee: Number(form.term_fee)||0,
-      dob: form.dob||"",
+      dob: form.dob||null,
       gender: form.gender||"",
       home_address: form.home_address||"",
       religion: form.religion||"",
@@ -1550,6 +1550,11 @@ function Students({db,user}) {
       emergency_contact: form.emergency_contact||"",
       medical_notes: form.medical_notes||"",
       photo_url: form.photo_url||"",
+      parent_email: form.parent_email||null,
+      parent2_name: form.parent2_name||"",
+      parent2_email: form.parent2_email||null,
+      blood_group: form.blood_group||"",
+      address: form.address||"",
     };
     if(!editId){
       // Auto-generate admission number
@@ -3294,7 +3299,7 @@ function ParentPortal({db,user}){
   const [loading,setLoading] = useState(true);
   useEffect(()=>{
     (async()=>{
-      const {data:students} = await db.from("students").select("*").eq("parent_email",user.email).limit(1);
+      const {data:students} = await db.from("students").select("*").or(`parent_email.eq.${user.email},parent2_email.eq.${user.email}`).limit(1);
       const st = students?.[0]||null; setChild(st);
       if(st){
         const [{data:pmts},{data:grd},{data:att}] = await Promise.all([
@@ -4542,7 +4547,12 @@ function SmsSettings({db,user}){
   const save=async()=>{
     // Token takes priority — store in sms_api_key for RPC function to read
     const finalKey = cfg.nextsms_token || (cfg.nextsms_username && cfg.nextsms_password ? `${cfg.nextsms_username}:${cfg.nextsms_password}` : cfg.sms_api_key);
-    await db.from("settings").upsert({id:1,...cfg,sms_api_key:finalKey,sms_sender:cfg.sms_sender||""});
+    const { error } = await db.from("settings").upsert({id:1,...cfg,sms_api_key:finalKey,sms_sender:cfg.sms_sender||""});
+    if (error) {
+      alert("❌ Hitilafu kuhifadhi settings: " + error.message);
+      console.error("SmsSettings save error:", error);
+      return;
+    }
     localStorage.setItem("nextsms_key", finalKey);
     localStorage.setItem("nextsms_sender", cfg.sms_sender||"");
     if(cfg.nextsms_token) localStorage.setItem("nextsms_token", cfg.nextsms_token);
@@ -4850,7 +4860,9 @@ function StudentProfile({db,user}){
         <div><label className="label">Term Fee</label><input className="input" type="number" value={form.term_fee||""} onChange={e=>F("term_fee",e.target.value)}/></div>
         <div><label className="label">Parent Name</label><input className="input" value={form.parent||""} onChange={e=>F("parent",e.target.value)}/></div>
         <PhoneField label="Parent Phone" value={form.phone||""} onChange={v=>F("phone",v)}/>
-        <div><label className="label">Parent Email</label><input className="input" type="email" value={form.parent_email||""} onChange={e=>F("parent_email",e.target.value)}/></div>
+        <div><label className="label">Parent Email (Mzazi 1)</label><input className="input" type="email" value={form.parent_email||""} onChange={e=>F("parent_email",e.target.value)}/></div>
+        <div><label className="label">Parent 2 Name (Hiari)</label><input className="input" value={form.parent2_name||""} onChange={e=>F("parent2_name",e.target.value)}/></div>
+        <div><label className="label">Parent 2 Email (Hiari)</label><input className="input" type="email" value={form.parent2_email||""} onChange={e=>F("parent2_email",e.target.value)}/></div>
         <div><label className="label">Blood Group</label><select className="input" value={form.blood_group||""} onChange={e=>F("blood_group",e.target.value)}><option value="">—</option>{["A+","A-","B+","B-","AB+","AB-","O+","O-"].map(b=><option key={b}>{b}</option>)}</select></div>
         <div className="grid-full"><label className="label">Address</label><input className="input" value={form.address||""} onChange={e=>F("address",e.target.value)}/></div>
         <div className="grid-full"><label className="label">Medical Notes</label><textarea className="input" style={{height:50,resize:"vertical"}} value={form.medical_notes||""} onChange={e=>F("medical_notes",e.target.value)}/></div>
