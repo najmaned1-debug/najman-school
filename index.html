@@ -1991,7 +1991,7 @@ function Fees({db,user}) {
 
   const save = async() => {
     if(!form.student_id||!form.amount) return;
-    const d = {...form,amount:Number(form.amount),created_by:user.id};
+    const d = {...form,amount:Number(form.amount),created_by:user.id,recorded_by_name:getUserName(user)};
     if(editP){ await db.from("payments").update(d).eq("id",editP); }
     else {
       await db.from("payments").insert(d);
@@ -2037,6 +2037,7 @@ function Fees({db,user}) {
         <div class="row"><b>Term:</b><span>${form.term}</span></div>
         <div class="row"><b>Method:</b><span>${form.method}</span></div>
         <div class="row"><b>Date:</b><span>${form.payment_date}</span></div>
+        <div class="row"><b>Received By:</b><span>${getUserName(user)}</span></div>
         <div class="total"><span>Kilicholipwa:</span><span>TZS ${Number(form.amount).toLocaleString()}</span></div>
         <div class="row"><b>Total Fee:</b><span>TZS ${fee.toLocaleString()}</span></div>
         <div class="row"><b>Total Iliyolipwa:</b><span>TZS ${totalPaidNow.toLocaleString()}</span></div>
