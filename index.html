@@ -1118,6 +1118,7 @@ function TeacherFeeCollect({db,user}){
   const [search,setSearch]=React.useState("");
   const [selected,setSelected]=React.useState(null);
   const [amount,setAmount]=React.useState("");
+  const [payDate,setPayDate]=React.useState(fmtDate());
   const [method,setMethod]=React.useState("Cash");
   const [feeType,setFeeType]=React.useState("Term Fee");
   const [saving,setSaving]=React.useState(false);
@@ -1148,12 +1149,12 @@ function TeacherFeeCollect({db,user}){
       });
   },[selected]);
 
-  // Teacher only sees their OWN recorded payments (today) — never totals/collections across the school
+  // Teacher only sees their OWN recorded payments (entered today) — never totals/collections across the school
   const loadMine=()=>{
-    const todayStr=new Date().toISOString().slice(0,10);
+    const startOfToday=new Date();startOfToday.setHours(0,0,0,0);
     db.from("payments").select("*,students(name,class_name)")
       .eq("recorded_by_name",teacherName)
-      .eq("payment_date",todayStr)
+      .gte("created_at",startOfToday.toISOString())
       .order("created_at",{ascending:false})
       .then(({data})=>setMyRecent(data||[]));
   };
@@ -1185,12 +1186,12 @@ function TeacherFeeCollect({db,user}){
     const d={
       student_id:selected.id,
       amount:Number(amount),
-      month:MONTHS[new Date().getMonth()],
+      month:MONTHS[new Date(payDate).getMonth()],
       fee_type:feeType,
       term:"Term 1",
       note:`Recorded by teacher: ${teacherName}`,
       method:method,
-      payment_date:new Date().toISOString().slice(0,10),
+      payment_date:payDate,
       created_by:user.id,
       recorded_by_name:teacherName
     };
@@ -1206,7 +1207,7 @@ function TeacherFeeCollect({db,user}){
     }
     printTeacherReceipt(selected,amount,method,feeType,ref,d.payment_date);
     setDone({name:selected.name,amount,ref,student:selected,method,feeType,payDate:d.payment_date});
-    setSelected(null);setAmount("");setSaving(false);
+    setSelected(null);setAmount("");setPayDate(fmtDate());setSaving(false);
     loadMine();
   };
 
@@ -1234,6 +1235,7 @@ function TeacherFeeCollect({db,user}){
         <div className="flex justify-between" style={{fontWeight:900,color:balInfo.bal>0?C.red:C.green,marginTop:2}}><span>{balInfo.bal>0?"Deni Lililobaki:":"✅ Amemaliza"}</span><span>{balInfo.bal>0?`TZS ${balInfo.bal.toLocaleString()}`:""}</span></div>
       </div>}
       <div className="mb-10"><label className="label">Amount (TZS) *</label><input className="input" type="number" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="Weka kiasi"/></div>
+      <div className="mb-10"><label className="label">Tarehe ya Malipo *</label><input className="input" type="date" value={payDate} onChange={e=>setPayDate(e.target.value)} max={fmtDate()}/></div>
       <div className="mb-10"><label className="label">Fee Type</label>
         <select className="input" value={feeType} onChange={e=>setFeeType(e.target.value)}>
           <option>Term Fee</option><option>Admission Fee</option><option>Uniform</option><option>Transport</option><option>Meals</option><option>Other</option>
@@ -1972,6 +1974,7 @@ function Fees({db,user}) {
   const blank = {student_id:"",amount:"",month:MONTHS[new Date().getMonth()],fee_type:"Term Fee",term:"Term 1",note:"",method:"Cash",payment_date:fmtDate()};
   const [form,setForm] = useState(blank);
   const F = (k,v) => setForm(f=>({...f,[k]:v}));
+  const F2 = (dateVal) => setForm(f=>({...f,payment_date:dateVal,month:MONTHS[new Date(dateVal).getMonth()]}));
 
   const load = async() => {
     setLoading(true);
@@ -2188,9 +2191,9 @@ function Fees({db,user}) {
       </div>
       <div className="grid-2">
         <div><Field label="Amount (TZS) *" value={form.amount} onChange={v=>F("amount",v)} type="number"/></div>
-        <div><Field label="Date" value={form.payment_date} onChange={v=>F("payment_date",v)} type="date"/></div>
+        <div><Field label="Date" value={form.payment_date} onChange={v=>F2(v)} type="date"/></div>
         <div><Select label="Fee Type" value={form.fee_type} onChange={v=>F("fee_type",v)} options={FEE_TYPES}/></div>
-        <div><Select label="Month" value={form.month} onChange={v=>F("month",v)} options={MONTHS}/></div>
+        <div><Select label="Month (Otomatiki kutoka Date)" value={form.month} onChange={v=>F("month",v)} options={MONTHS}/></div>
         <div><Select label="Term" value={form.term} onChange={v=>F("term",v)} options={TERMS}/></div>
         <div><Select label="Method" value={form.method} onChange={v=>F("method",v)} options={PAY_METHODS}/></div>
         <div className="grid-full"><Field label="Note" value={form.note} onChange={v=>F("note",v)}/></div>
