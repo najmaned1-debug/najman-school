@@ -5787,10 +5787,11 @@ function Dashboard({db,user,setPage}){
                   <div key={v} style={{position:"absolute",left:0,right:0,bottom:`${chartMax>0?(v/chartMax)*100:0}%`,borderTop:`1px dashed ${AG.cardBorder}`}}/>
                 ))}
                 <div style={{position:"absolute",inset:0,display:"flex",alignItems:"flex-end",padding:"0 4px",boxSizing:"border-box"}}>
-                  {monthlyData.map(m=>{
+                  {monthlyData.map((m,idx)=>{
                     const hPct=chartMax>0?(m.amount/chartMax)*100:0;
-                    return <div key={m.month} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",height:"100%",justifyContent:"flex-end"}}>
-                      <div title={`${m.month}: TZS ${m.amount.toLocaleString()}`} style={{width:"60%",height:`${hPct}%`,minHeight:m.amount>0?2:0,background:`linear-gradient(180deg,${AG.blue},#1d4ed8)`,borderRadius:"2px 2px 0 0"}}/>
+                    const isCurrent=idx===new Date().getMonth();
+                    return <div key={m.month} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",height:"100%",justifyContent:"flex-end",borderRight:idx<11?`1px dotted ${AG.cardBorder}`:"none"}}>
+                      <div title={`${m.month}: TZS ${m.amount.toLocaleString()}`} style={{width:"60%",height:`${hPct}%`,minHeight:m.amount>0?2:0,background:isCurrent?`linear-gradient(180deg,${AG.gold},${AG.blue})`:`linear-gradient(180deg,${AG.blue},#1d4ed8)`,borderRadius:"2px 2px 0 0"}}/>
                     </div>;
                   })}
                 </div>
@@ -5799,9 +5800,10 @@ function Dashboard({db,user,setPage}){
             <div style={{display:"grid",gridTemplateColumns:"34px 1fr",marginTop:6}}>
               <div/>
               <div style={{display:"flex",padding:"0 4px",boxSizing:"border-box"}}>
-                {monthlyData.map(m=>(
-                  <div key={m.month} title={m.month} style={{flex:1,textAlign:"center",fontSize:9,fontWeight:800,color:AG.dim,cursor:"default"}}>{m.month[0]}</div>
-                ))}
+                {monthlyData.map((m,idx)=>{
+                  const isCurrent=idx===new Date().getMonth();
+                  return <div key={m.month} title={m.month} style={{flex:1,textAlign:"center",fontSize:10,fontWeight:900,color:isCurrent?AG.gold:AG.dim,cursor:"default"}}>{m.month[0]}</div>;
+                })}
               </div>
             </div>
           </div>;
