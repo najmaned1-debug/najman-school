@@ -5771,39 +5771,39 @@ function Dashboard({db,user,setPage}){
         </div>
       </Panel>
 
-      {(role==="admin"||role==="accountant")?<Panel title={`Fee Collection by Month (${new Date().getFullYear()})`}>
+      {(role==="admin"||role==="accountant")?<Panel title={`Fee Collection by Month (${new Date().getFullYear()})`} style={{padding:"20px 8px 20px 20px"}}>
         {(()=>{
           const chartMax = Math.ceil((maxMonthly*1.15)/50000)*50000 || 50000;
           const gridLines = [0,0.25,0.5,0.75,1].map(f=>Math.round(chartMax*f));
           const chartH = 210;
-          const fmtK=v=>v>=1000000?(v/1000000).toFixed(1)+"M":v>=1000?Math.round(v/1000)+"K":v;
+          const fmtFull=v=>Math.round(v).toString();
           return <div>
-            <div style={{display:"grid",gridTemplateColumns:"40px 1fr",height:chartH}}>
-              <div style={{display:"flex",flexDirection:"column",justifyContent:"space-between",paddingRight:8,fontSize:10,color:AG.dim,textAlign:"right",boxSizing:"border-box"}}>
-                {[...gridLines].reverse().map(v=><div key={v}>{fmtK(v)}</div>)}
+            <div style={{display:"grid",gridTemplateColumns:"58px 1fr",height:chartH}}>
+              <div style={{display:"flex",flexDirection:"column",justifyContent:"space-between",paddingRight:6,fontSize:10,color:AG.dim,textAlign:"right",boxSizing:"border-box"}}>
+                {[...gridLines].reverse().map(v=><div key={v}>{fmtFull(v)}</div>)}
               </div>
               <div style={{position:"relative",borderLeft:`1px solid ${AG.cardBorder}`,borderBottom:`1px solid ${AG.cardBorder}`}}>
                 {gridLines.map(v=>(
                   <div key={v} style={{position:"absolute",left:0,right:0,bottom:`${chartMax>0?(v/chartMax)*100:0}%`,borderTop:`1px dashed ${AG.cardBorder}`}}/>
                 ))}
-                <div style={{position:"absolute",inset:0,display:"flex",alignItems:"flex-end",padding:"0 6px",boxSizing:"border-box"}}>
+                <div style={{position:"absolute",inset:0,display:"flex",alignItems:"flex-end",padding:"0 2px",boxSizing:"border-box"}}>
                   {monthlyData.map((m,idx)=>{
                     const hPct=chartMax>0?(m.amount/chartMax)*100:0;
                     const isCurrent=idx===new Date().getMonth();
-                    return <div key={m.month} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",height:"100%",justifyContent:"flex-end",borderRight:idx<11?`1px dotted ${AG.cardBorder}`:"none"}}>
-                      {m.amount>0&&<div style={{fontSize:9,fontWeight:800,color:isCurrent?AG.gold:AG.mid,marginBottom:3,whiteSpace:"nowrap"}}>{fmtK(m.amount)}</div>}
-                      <div title={`${m.month}: TZS ${m.amount.toLocaleString()}`} style={{width:"68%",height:`${hPct}%`,minHeight:m.amount>0?2:0,background:isCurrent?`linear-gradient(180deg,${AG.gold},${AG.blue})`:`linear-gradient(180deg,${AG.blue},#1d4ed8)`,borderRadius:"3px 3px 0 0"}}/>
+                    return <div key={m.month} style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",alignItems:"center",height:"100%",justifyContent:"flex-end",borderRight:idx<11?`1px dotted ${AG.cardBorder}`:"none"}}>
+                      {m.amount>0&&<div style={{fontSize:8,fontWeight:800,color:isCurrent?AG.gold:AG.mid,marginBottom:3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%",width:"100%",textAlign:"center"}}>{fmtFull(m.amount)}</div>}
+                      <div title={`${m.month}: TZS ${m.amount.toLocaleString()}`} style={{width:"72%",height:`${hPct}%`,minHeight:m.amount>0?2:0,background:isCurrent?`linear-gradient(180deg,${AG.gold},${AG.blue})`:`linear-gradient(180deg,${AG.blue},#1d4ed8)`,borderRadius:"3px 3px 0 0"}}/>
                     </div>;
                   })}
                 </div>
               </div>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"40px 1fr",marginTop:6}}>
+            <div style={{display:"grid",gridTemplateColumns:"58px 1fr",marginTop:6}}>
               <div/>
-              <div style={{display:"flex",padding:"0 6px",boxSizing:"border-box"}}>
+              <div style={{display:"flex",padding:"0 2px",boxSizing:"border-box"}}>
                 {monthlyData.map((m,idx)=>{
                   const isCurrent=idx===new Date().getMonth();
-                  return <div key={m.month} title={m.month} style={{flex:1,textAlign:"center",fontSize:11,fontWeight:900,color:isCurrent?AG.gold:AG.dim,cursor:"default"}}>{m.month[0]}</div>;
+                  return <div key={m.month} title={m.month} style={{flex:1,minWidth:0,textAlign:"center",fontSize:11,fontWeight:900,color:isCurrent?AG.gold:AG.dim,cursor:"default"}}>{m.month[0]}</div>;
                 })}
               </div>
             </div>
