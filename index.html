@@ -3048,14 +3048,39 @@ function BulkSMS({db,user}){
   const [apiKey] = useState(()=>localStorage.getItem("nextsms_key")||"");
   const [sender] = useState(()=>localStorage.getItem("nextsms_sender")||"NAJMANshule");
 
+  // ── Custom (unsaved) contacts — for people not in the system ──
+  const [customContacts,setCustomContacts] = useState([]); // [{id,name,phone}]
+  const [customName,setCustomName] = useState("");
+  const [customPhone,setCustomPhone] = useState("");
+  const [customErr,setCustomErr] = useState("");
+
+  const addCustomContact = () => {
+    setCustomErr("");
+    if(!customPhone.trim()){ setCustomErr("Weka namba ya simu"); return; }
+    const normalized = normPhone(customPhone);
+    if(!normalized || normalized.length<11){ setCustomErr("Namba ya simu si sahihi"); return; }
+    const id = "custom-"+Date.now();
+    const contact = {id, name: customName.trim()||"Contact", phone: customPhone.trim()};
+    setCustomContacts(p=>[...p,contact]);
+    setSelected(p=>[...p,id]);
+    setCustomName(""); setCustomPhone("");
+  };
+
+  const removeCustomContact = (id) => {
+    setCustomContacts(p=>p.filter(c=>c.id!==id));
+    setSelected(p=>p.filter(x=>x!==id));
+  };
+
   const sendAll = async() => {
-    const targets = students.filter(s=>selected.includes(s.id)&&s.phone);
-    if(!targets.length){alert("Select students with phone numbers!");return;}
+    const studentTargets = students.filter(s=>selected.includes(s.id)&&s.phone).map(s=>({name:s.name,phone:s.phone}));
+    const customTargets = customContacts.filter(c=>selected.includes(c.id)&&c.phone).map(c=>({name:c.name,phone:c.phone}));
+    const targets = [...studentTargets, ...customTargets];
+    if(!targets.length){alert("Select recipients with phone numbers!");return;}
     if(!message.trim()){alert("Type a message first!");return;}
     setSending(true);const res=[];
-    for(const s of targets){
-      const r=await sendSMS(s.phone,message);
-      res.push({name:s.name,ok:r.ok,status:r.status||r.error||"?"});
+    for(const t of targets){
+      const r=await sendSMS(t.phone,message);
+      res.push({name:t.name,ok:r.ok,status:r.status||r.error||"?"});
     }
     setResults(res);setSending(false);
   };
@@ -3080,6 +3105,26 @@ function BulkSMS({db,user}){
         <div style={{flex:1,fontWeight:700}}>{s.name}</div>
         <div style={{fontSize:15,color:s.phone?C.textSoft:C.red}}>{s.phone||"No number"}</div>
       </div>)}
+
+      {customContacts.length>0&&<div style={{marginTop:10,paddingTop:10,borderTop:"1px dashed #1f2e47"}}>
+        <div style={{fontSize:11,color:C.muted,fontWeight:900,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Watu wasiohifadhiwa kwenye mfumo</div>
+        {customContacts.map(c=><div key={c.id} className="flex align-center gap-8" style={{padding:"7px 0",borderBottom:"1px solid #1f2e47"}}>
+          <input type="checkbox" checked={selected.includes(c.id)} onChange={()=>setSelected(p=>p.includes(c.id)?p.filter(x=>x!==c.id):[...p,c.id])}/>
+          <div style={{flex:1,fontWeight:700}}>{c.name}</div>
+          <div style={{fontSize:15,color:C.textSoft}}>{c.phone}</div>
+          <button className="btn-ghost" style={{fontSize:12,padding:"4px 9px",color:C.red}} onClick={()=>removeCustomContact(c.id)}>✕</button>
+        </div>)}
+      </div>}
+
+      <div style={{marginTop:12,paddingTop:12,borderTop:"1px solid #1f2e47"}}>
+        <div style={{fontSize:11,color:C.muted,fontWeight:900,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>➕ Ongeza Contact Mpya</div>
+        <div className="flex gap-8" style={{flexWrap:"wrap"}}>
+          <input className="input" style={{flex:"1 1 140px"}} placeholder="Jina (si lazima)" value={customName} onChange={e=>setCustomName(e.target.value)}/>
+          <input className="input" style={{flex:"1 1 140px"}} placeholder="Namba ya simu, mf. 0712345678" value={customPhone} onChange={e=>setCustomPhone(e.target.value)} onKeyDown={e=>{if(e.key==="Enter") addCustomContact();}}/>
+          <button className="btn" style={{fontSize:14,padding:"9px 16px",flex:"0 0 auto"}} onClick={addCustomContact}>➕ Ongeza</button>
+        </div>
+        {customErr&&<div style={{color:C.red,fontSize:13,marginTop:6}}>{customErr}</div>}
+      </div>
     </div>
     <div className="flex justify-between align-center">
       <div style={{fontSize:15,color:C.textSoft}}>Selected: <strong style={{color:C.accent}}>{selected.length}</strong></div>
