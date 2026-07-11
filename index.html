@@ -138,6 +138,17 @@ select.input option{background:#0d1526;color:#e8edf5;font-weight:700;}
 
 <!-- PROFESSIONAL UPGRADE PATCH -->
 <meta name="theme-color" content="#0b1120">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Najman SMS">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <style>
 .table-responsive{overflow-x:auto;width:100%;}
 @media(max-width:1024px){
@@ -156,15 +167,40 @@ select.input option{background:#0d1526;color:#e8edf5;font-weight:700;}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js" crossorigin></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" crossorigin></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin></script>
+<!-- jsPDF, jsPDF-AutoTable and QRCode are heavy and only used on a few screens (PDF export, QR check-in).
+     They are now lazy-loaded on demand (see loadScriptOnce below) instead of blocking the initial paint. -->
+<script>
+window.__scriptCache = window.__scriptCache || {};
+function loadScriptOnce(src){
+  if(window.__scriptCache[src]) return window.__scriptCache[src];
+  window.__scriptCache[src] = new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src=src; s.crossOrigin="anonymous";
+    s.onload=()=>resolve(true);
+    s.onerror=()=>reject(new Error("Failed to load "+src));
+    document.head.appendChild(s);
+  });
+  return window.__scriptCache[src];
+}
+function loadPdfLibs(){
+  return loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
+    .then(()=>loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"));
+}
+function loadQrLib(){
+  return loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js");
+}
+</script>
 
 <script>
 window.addEventListener('load', function() {
   console.log('Supabase:', typeof window.supabase);
   console.log('React:', typeof window.React);
   console.log('ReactDOM:', typeof window.ReactDOM);
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function(err){
+      console.log('SW registration failed (this is fine if opening the file directly without a server):', err);
+    });
+  }
 });
 </script>
 
@@ -227,7 +263,8 @@ const toTitleCase = (str) => {
 };
 
 // ── PDF HELPER ─────────────────────────────────────────
-const exportPDF = (title, columns, rows, filename) => {
+const exportPDF = async (title, columns, rows, filename) => {
+  if(!window.jspdf) await loadPdfLibs();
   const {jsPDF} = window.jspdf;
   const doc = new jsPDF({orientation: rows.length>8&&columns.length>6?"landscape":"portrait"});
   const pageW = doc.internal.pageSize.getWidth();
@@ -2483,10 +2520,14 @@ function DutyRoster({db}){
   useEffect(()=>{load();},[]);
 
   useEffect(()=>{
-    if(qrRef.current && window.QRCode){
+    if(!qrRef.current) return;
+    const render=()=>{
+      if(!qrRef.current) return;
       qrRef.current.innerHTML="";
       new window.QRCode(qrRef.current,{text:checkinUrl,width:160,height:160,colorDark:"#1e3a5f",colorLight:"#ffffff"});
-    }
+    };
+    if(window.QRCode) render();
+    else loadQrLib().then(render).catch(()=>{});
   },[loading]);
 
   const setDay=(day,staffId)=>setRoster(r=>({...r,[day]:staffId}));
@@ -5712,7 +5753,7 @@ function Dashboard({db,user,setPage}){
         })()}
         <div style={{display:"flex",marginLeft:34,marginTop:6}}>
           {monthlyData.map(m=>(
-            <div key={m.month} style={{flex:1,textAlign:"center",fontSize:8,color:AG.dim}}>{m.month}</div>
+            <div key={m.month} title={m.month} style={{flex:1,textAlign:"center",fontSize:9,fontWeight:800,color:AG.dim,cursor:"default"}}>{m.month[0]}</div>
           ))}
         </div>
       </Panel>:<Panel title="SMS Statistics">
