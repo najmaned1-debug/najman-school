@@ -1158,6 +1158,7 @@ function TeacherFeeCollect({db,user}){
   const [payDate,setPayDate]=React.useState(fmtDate());
   const [method,setMethod]=React.useState("Cash");
   const [feeType,setFeeType]=React.useState("Term Fee");
+  const [month,setMonth]=React.useState(MONTHS[new Date().getMonth()]);
   const [term,setTerm]=React.useState("Term 1");
   const [note,setNote]=React.useState("");
   const [saving,setSaving]=React.useState(false);
@@ -1225,7 +1226,7 @@ function TeacherFeeCollect({db,user}){
     const d={
       student_id:selected.id,
       amount:Number(amount),
-      month:MONTHS[new Date(payDate).getMonth()],
+      month:month,
       fee_type:feeType,
       term:term,
       note:note||`Recorded by teacher: ${teacherName}`,
@@ -1246,7 +1247,7 @@ function TeacherFeeCollect({db,user}){
     }
     printTeacherReceipt(selected,amount,method,feeType,ref,d.payment_date);
     setDone({name:selected.name,amount,ref,student:selected,method,feeType,payDate:d.payment_date});
-    setSelected(null);setAmount("");setPayDate(fmtDate());setNote("");setTerm("Term 1");setSaving(false);
+    setSelected(null);setAmount("");setPayDate(fmtDate());setMonth(MONTHS[new Date().getMonth()]);setNote("");setTerm("Term 1");setSaving(false);
     loadMine();
   };
 
@@ -1274,10 +1275,15 @@ function TeacherFeeCollect({db,user}){
         <div className="flex justify-between" style={{fontWeight:900,color:balInfo.bal>0?C.red:C.green,marginTop:2}}><span>{balInfo.bal>0?"Deni Lililobaki:":"✅ Amemaliza"}</span><span>{balInfo.bal>0?`TZS ${balInfo.bal.toLocaleString()}`:""}</span></div>
       </div>}
       <div className="mb-10"><label className="label">Amount (TZS) *</label><input className="input" type="number" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="Weka kiasi"/></div>
-      <div className="mb-10"><label className="label">Tarehe ya Malipo *</label><input className="input" type="date" value={payDate} onChange={e=>setPayDate(e.target.value)} max={fmtDate()}/></div>
+      <div className="mb-10"><label className="label">Tarehe ya Malipo *</label><input className="input" type="date" value={payDate} onChange={e=>{setPayDate(e.target.value);setMonth(MONTHS[new Date(e.target.value).getMonth()]);}} max={fmtDate()}/></div>
       <div className="mb-10"><label className="label">Fee Type</label>
         <select className="input" value={feeType} onChange={e=>setFeeType(e.target.value)}>
           <option>Term Fee</option><option>Admission Fee</option><option>Uniform</option><option>Transport</option><option>Meals</option><option>Other</option>
+        </select>
+      </div>
+      <div className="mb-10"><label className="label">Month (Otomatiki kutoka Tarehe)</label>
+        <select className="input" value={month} onChange={e=>setMonth(e.target.value)}>
+          {MONTHS.map(m=><option key={m}>{m}</option>)}
         </select>
       </div>
       <div className="mb-10"><label className="label">Term</label>
