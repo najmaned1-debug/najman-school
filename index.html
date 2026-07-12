@@ -218,7 +218,7 @@ const db = createClient(SUPA_URL, SUPA_KEY);
 // ── CONSTANTS ──────────────────────────────────────────
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const FEE_TYPES = ["Term Fee","Annual Fee","Meals","Uniform","Books","Transport","Activities","Other"];
-const TERMS = ["Term 1","Term 2","Term 3"];
+const TERMS = ["Term 1","Term 2","Term 3","Other"];
 const PAY_METHODS = ["Cash","M-Pesa","Tigo Pesa","Airtel Money","Halopesa","CRDB","NMB","Other Bank"];
 const ROLES = ["Principal","Deputy Principal","Class Teacher","Assistant Teacher","Admin Officer","Accountant","Nurse","Security","Driver","Cook","Cleaner","Other"];
 const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday"];
@@ -1282,12 +1282,12 @@ function TeacherFeeCollect({db,user}){
       </div>
       <div className="mb-10"><label className="label">Term</label>
         <select className="input" value={term} onChange={e=>setTerm(e.target.value)}>
-          <option>Term 1</option><option>Term 2</option><option>Term 3</option>
+          <option>Term 1</option><option>Term 2</option><option>Term 3</option><option>Other</option>
         </select>
       </div>
       <div className="mb-12"><label className="label">Payment Method</label>
         <select className="input" value={method} onChange={e=>setMethod(e.target.value)}>
-          <option>Cash</option><option>M-Pesa</option><option>Tigo Pesa</option><option>Airtel Money</option><option>Bank</option>
+          <option>Cash</option><option>M-Pesa</option><option>Tigo Pesa</option><option>Airtel Money</option><option>Halopesa</option><option>CRDB</option><option>NMB</option><option>Other Bank</option>
         </select>
       </div>
       <div className="mb-12"><label className="label">Note (Hiari)</label><input className="input" value={note} onChange={e=>setNote(e.target.value)} placeholder="Maelezo ya ziada..."/></div>
@@ -7364,7 +7364,7 @@ function Payroll({db,user}){
         </select></div>
       <div className="grid-2">
         <div><Field label="Pay Date" value={form.pay_date} onChange={v=>setForm(f=>({...f,pay_date:v}))} type="date"/></div>
-        <div><Select label="Payment Method" value={form.payment_method} onChange={v=>setForm(f=>({...f,payment_method:v}))} options={["Cash","Bank Transfer","M-Pesa","Tigo Pesa","Airtel Money"]}/></div>
+        <div><Select label="Payment Method" value={form.payment_method} onChange={v=>setForm(f=>({...f,payment_method:v}))} options={["Cash","Bank Transfer","M-Pesa","Tigo Pesa","Airtel Money","Halopesa","CRDB","NMB","Other Bank"]}/></div>
         <div><Field label="Basic Salary (TZS)" value={form.basic_salary} onChange={v=>setForm(f=>({...f,basic_salary:v}))} type="number"/></div>
         <div><Field label="Allowances (TZS)" value={form.allowances} onChange={v=>setForm(f=>({...f,allowances:v}))} type="number"/></div>
         <div><Field label="Deductions (TZS)" value={form.deductions} onChange={v=>setForm(f=>({...f,deductions:v}))} type="number"/></div>
