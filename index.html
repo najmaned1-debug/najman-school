@@ -160,13 +160,28 @@ select.input option{background:#0d1526;color:#e8edf5;font-weight:700;}
 </head>
 <body>
 <button class="hamburger" id="menuBtn">☰</button>
-<div id="root"></div>
+<div id="root">
+  <div id="__boot_loading" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0b1120;color:#e5e7eb;font-family:sans-serif;text-align:center;padding:24px;box-sizing:border-box;">
+    <div style="width:44px;height:44px;border:4px solid #232f4d;border-top-color:#f5a623;border-radius:50%;animation:__spin 0.8s linear infinite;margin-bottom:18px;"></div>
+    <div style="font-size:16px;font-weight:700;">Najman Education Centre</div>
+    <div id="__boot_status" style="font-size:13px;color:#8a93ab;margin-top:6px;">Inapakia mfumo...</div>
+  </div>
+</div>
+<style>@keyframes __spin{to{transform:rotate(360deg)}}</style>
 
 <!-- Load scripts in correct order -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js" crossorigin></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js" crossorigin></script>
+<script>
+window.__criticalFailed = false;
+function __markFailed(name){
+  window.__criticalFailed = true;
+  var el = document.getElementById('__boot_status');
+  if (el) el.textContent = "Imeshindwa kupakia: " + name + " (mtandao dhaifu)";
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin onerror="__markFailed('React')"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin onerror="__markFailed('ReactDOM')"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js" crossorigin onerror="__markFailed('Supabase')"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js" crossorigin onerror="__markFailed('Babel')"></script>
 <!-- jsPDF, jsPDF-AutoTable and QRCode are heavy and only used on a few screens (PDF export, QR check-in).
      They are now lazy-loaded on demand (see loadScriptOnce below) instead of blocking the initial paint. -->
 <script>
@@ -189,6 +204,19 @@ function loadPdfLibs(){
 function loadQrLib(){
   return loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js");
 }
+</script>
+
+<script>
+setTimeout(function(){
+  var stillLoading = document.getElementById('__boot_loading');
+  if (stillLoading) {
+    stillLoading.innerHTML =
+      '<div style="font-size:34px;margin-bottom:12px;">📡</div>' +
+      '<div style="font-size:16px;font-weight:800;margin-bottom:6px;">Mfumo Umeshindwa Kupakia</div>' +
+      '<div style="font-size:13px;color:#8a93ab;max-width:280px;margin-bottom:18px;line-height:1.5;">Hii mara nyingi hutokea kwa sababu ya mtandao dhaifu. Angalia mtandao wako (WiFi/Data) kisha jaribu tena.</div>' +
+      '<button onclick="location.reload()" style="background:#f5a623;color:#0b1120;border:none;padding:12px 28px;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;">🔄 Jaribu Tena</button>';
+  }
+}, 12000);
 </script>
 
 <script>
