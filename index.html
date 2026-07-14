@@ -138,6 +138,9 @@ select.input option{background:#0d1526;color:#e8edf5;font-weight:700;}
 
 <!-- PROFESSIONAL UPGRADE PATCH -->
 <meta name="theme-color" content="#0b1120">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -149,6 +152,37 @@ select.input option{background:#0d1526;color:#e8edf5;font-weight:700;}
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script>
+// Auto-refresh mechanism: whenever APP_VERSION changes (bumped on every update),
+// force a one-time hard reload + clear any stale service-worker caches, so
+// the person never has to manually "Clear site data" again.
+window.__APP_VERSION = "2026-07-13-002";
+(function(){
+  try{
+    var stored = localStorage.getItem("najman_app_version");
+    if(stored && stored !== window.__APP_VERSION){
+      localStorage.setItem("najman_app_version", window.__APP_VERSION);
+      if('caches' in window){
+        caches.keys().then(function(names){
+          return Promise.all(names.map(function(n){ return caches.delete(n); }));
+        }).finally(function(){
+          if('serviceWorker' in navigator){
+            navigator.serviceWorker.getRegistrations().then(function(regs){
+              regs.forEach(function(r){ r.unregister(); });
+            }).finally(function(){ location.reload(true); });
+          } else {
+            location.reload(true);
+          }
+        });
+      } else {
+        location.reload(true);
+      }
+    } else if(!stored){
+      localStorage.setItem("najman_app_version", window.__APP_VERSION);
+    }
+  }catch(e){}
+})();
+</script>
 <style>
 .table-responsive{overflow-x:auto;width:100%;}
 @media(max-width:1024px){

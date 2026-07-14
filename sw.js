@@ -2,7 +2,7 @@
 // Caches the app shell + CDN libraries so the app opens instantly after the first install.
 // NEVER caches Supabase requests (auth/data) — those must always hit the network live.
 
-const CACHE_NAME = "najman-sms-v3";
+const CACHE_NAME = "najman-sms-v4";
 
 const PRECACHE_URLS = [
   "/",
