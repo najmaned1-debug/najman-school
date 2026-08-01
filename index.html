@@ -549,7 +549,9 @@ function ParentAccountLink({db:db,user:user}){
   const[parents,setParents]=useState([]),[students,setStudents]=useState([]),[loading,setLoading]=useState(!0),
   [showCreate,setShowCreate]=useState(!1),[newParent,setNewParent]=useState({full_name:"",email:"",phone:"",password:""}),
   [creating,setCreating]=useState(!1),[createMsg,setCreateMsg]=useState(""),
-  [linkTarget,setLinkTarget]=useState(null),[studentSearch,setStudentSearch]=useState(""),[linking,setLinking]=useState(!1);
+  [linkTarget,setLinkTarget]=useState(null),[studentSearch,setStudentSearch]=useState(""),[linking,setLinking]=useState(!1),
+  [pwdTarget,setPwdTarget]=useState(null),[newPwd,setNewPwd]=useState(""),[pwdSaving,setPwdSaving]=useState(!1),[pwdMsg,setPwdMsg]=useState(""),
+  [deleting,setDeleting]=useState(null),[setupError,setSetupError]=useState(!1);
   const loadData=async()=>{
     setLoading(!0);
     const[{data:p},{data:s}]=await Promise.all([
@@ -560,29 +562,56 @@ function ParentAccountLink({db:db,user:user}){
   };
   useEffect(()=>{loadData()},[]);
   const genPassword=()=>"Njm"+Math.floor(100000+Math.random()*900000);
+  const callAdminUser=async(payload)=>{
+    const{data,error}=await db.functions.invoke("admin-user",{body:payload});
+    if(error){
+      let msg=error.message||"Imeshindwa kuwasiliana na server";
+      try{if(error.context&&error.context.json){const j=await error.context.json();if(j&&j.error)msg=j.error}}catch(e){}
+      throw new Error(msg);
+    }
+    if(data&&data.ok===!1)throw new Error(data.error||"Imeshindwa");
+    return data;
+  };
   const createParentAccount=async()=>{
     if(!newParent.full_name.trim()||!newParent.email.trim()){setCreateMsg("Jaza jina na email");return}
     setCreating(!0);setCreateMsg("");
     try{
       const pwd=newParent.password.trim()||genPassword();
-      const tempClient=window.supabase.createClient(SUPA_URL,SUPA_KEY,{auth:{storageKey:"najman_temp_parent_signup_"+Date.now(),persistSession:!1,autoRefreshToken:!1}});
-      const{data:signData,error:signErr}=await tempClient.auth.signUp({email:newParent.email.trim(),password:pwd});
-      if(signErr)throw signErr;
-      const uid=signData&&signData.user&&signData.user.id;
-      if(!uid)throw new Error("Imeshindwa kupata akaunti mpya");
-      const profileRow={id:uid,email:newParent.email.trim(),full_name:toTitleCase(newParent.full_name),role:"parent",phone:newParent.phone||""};
-      let{error:profErr}=await tempClient.from("user_profiles").insert(profileRow);
-      if(profErr){
-        const res2=await db.from("user_profiles").insert(profileRow);
-        if(res2.error)throw res2.error;
-      }
-      setCreateMsg("\u2705 Akaunti imeundwa!\nEmail: "+newParent.email.trim()+"\nPassword: "+pwd+"\nMwambie mzazi abadilishe password baada ya kuingia.");
+      await callAdminUser({action:"create",email:newParent.email.trim(),password:pwd,full_name:toTitleCase(newParent.full_name),phone:newParent.phone||"",role:"parent"});
+      setCreateMsg("\u2705 Akaunti imeundwa!\nEmail: "+newParent.email.trim()+"\nPassword: "+pwd+"\nMwambie mzazi apate hii taarifa aingie nayo.");
       setNewParent({full_name:"",email:"",phone:"",password:""});
       loadData();
     }catch(err){
-      setCreateMsg("\u274C "+(err.message||"Imeshindwa kuunda akaunti"));
+      const m=err.message||"Imeshindwa kuunda akaunti";
+      if(/not found|failed to fetch|FunctionsFetchError|404/i.test(m)){setSetupError(!0)}
+      setCreateMsg("\u274C "+m);
     }
     setCreating(!1);
+  };
+  const savePassword=async(parent)=>{
+    if(!newPwd||newPwd.trim().length<6){setPwdMsg("Password iwe angalau herufi 6");return}
+    setPwdSaving(!0);setPwdMsg("");
+    try{
+      await callAdminUser({action:"reset_password",user_id:parent.id,password:newPwd.trim()});
+      setPwdMsg("\u2705 Password ya "+parent.full_name+" imebadilishwa! Mpe mzazi: "+newPwd.trim());
+      setNewPwd("");
+    }catch(err){
+      const m=err.message||"Imeshindwa kubadilisha password";
+      if(/not found|failed to fetch|FunctionsFetchError|404/i.test(m)){setSetupError(!0)}
+      setPwdMsg("\u274C "+m);
+    }
+    setPwdSaving(!1);
+  };
+  const deleteParent=async(parent)=>{
+    if(!confirm("Una uhakika unataka kufuta KABISA akaunti ya "+parent.full_name+"? Hataweza kuingia tena kwenye Parent Portal."))return;
+    setDeleting(parent.id);
+    try{
+      await callAdminUser({action:"delete",user_id:parent.id});
+      loadData();
+    }catch(err){
+      alert("\u274C Imeshindwa kufuta: "+(err.message||""));
+    }
+    setDeleting(null);
   };
   const linkedStudentsFor=parent=>students.filter(s=>(s.parent_email&&s.parent_email===parent.email)||(s.parent2_email&&s.parent2_email===parent.email)||(parent.phone&&s.phone&&normPhone(s.phone)===normPhone(parent.phone)));
   const linkStudent=async(parent,student)=>{
@@ -610,9 +639,13 @@ function ParentAccountLink({db:db,user:user}){
       React.createElement("div",{style:{fontSize:21,fontWeight:900,fontFamily:"'Playfair Display',serif"}},"\u{1F517} Unganisha Wazazi"),
       React.createElement("button",{className:"btn",onClick:()=>{setShowCreate(!0);setCreateMsg("")}},"+ Akaunti Mpya ya Mzazi")
     ),
+    setupError&&React.createElement("div",{className:"card",style:{marginBottom:14,background:"rgba(239,68,68,.08)",border:"1px solid rgba(239,68,68,.35)"}},
+      React.createElement("div",{style:{fontWeight:800,color:C.red,marginBottom:6,fontSize:14}},"\u26A0\uFE0F Edge Function 'admin-user' haijaundwa bado"),
+      React.createElement("div",{style:{fontSize:12.5,color:C.textSoft,lineHeight:1.8}},"Ili kuunda/kubadilisha password za wazazi moja kwa moja, unahitaji kuweka Edge Function moja Supabase (kazi ya mara moja tu, kama ile ya send-sms uliyoshaunda). Muulize Claude akupe code na hatua za kuiweka.")
+    ),
     React.createElement("div",{className:"card",style:{marginBottom:14,background:"rgba(59,130,246,.08)",border:"1px solid rgba(59,130,246,.3)"}},
       React.createElement("div",{style:{fontSize:13,color:C.textSoft,lineHeight:1.7}},
-        "\u{1F4A1} Hapa unaweza kuunda akaunti ya mzazi na kuiunganisha moja kwa moja na mwanafunzi wake \u2014 bila kwenda Supabase. Mfumo utasasisha yenyewe, na mzazi ataona taarifa za mtoto wake kwenye Parent Portal mara akiingia."
+        "\u{1F4A1} Hapa unaweza kuunda akaunti ya mzazi, kubadilisha password yake wakati wowote, na kuiunganisha na mwanafunzi \u2014 yote bila kwenda Supabase. Mfumo unasasisha yenyewe."
       )
     ),
     loading?React.createElement(Spinner,null):
@@ -626,14 +659,26 @@ function ParentAccountLink({db:db,user:user}){
               React.createElement("div",{style:{fontWeight:900,fontSize:15}},"\u{1F464} "+parent.full_name),
               React.createElement("div",{style:{fontSize:12,color:C.muted}},parent.email+(parent.phone?" \u2022 "+parent.phone:""))
             ),
-            React.createElement("button",{className:"btn-ghost",style:{fontSize:12},onClick:()=>{setLinkTarget(linkTarget===parent.id?null:parent.id);setStudentSearch("")}},linkTarget===parent.id?"\u2715 Funga":"\u2795 Unganisha Mwanafunzi")
+            React.createElement("div",{className:"flex gap-6 flex-wrap"},
+              React.createElement("button",{className:"btn-ghost",style:{fontSize:12},onClick:()=>{setPwdTarget(pwdTarget===parent.id?null:parent.id);setLinkTarget(null);setNewPwd("");setPwdMsg("")}},pwdTarget===parent.id?"\u2715 Funga":"\u{1F511} Password"),
+              React.createElement("button",{className:"btn-ghost",style:{fontSize:12},onClick:()=>{setLinkTarget(linkTarget===parent.id?null:parent.id);setPwdTarget(null);setStudentSearch("")}},linkTarget===parent.id?"\u2715 Funga":"\u2795 Unganisha Mwanafunzi"),
+              React.createElement("button",{className:"btn-ghost",style:{fontSize:12,color:C.red,borderColor:C.red},disabled:deleting===parent.id,onClick:()=>deleteParent(parent)},deleting===parent.id?"...":"\u{1F5D1}\uFE0F")
+            )
           ),
-          linked.length>0?React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:6,marginBottom:linkTarget===parent.id?10:0}},
+          linked.length>0?React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:6,marginBottom:(linkTarget===parent.id||pwdTarget===parent.id)?10:0}},
             linked.map(s=>React.createElement("span",{key:s.id,style:{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(34,197,94,.12)",color:C.green,borderRadius:20,padding:"3px 10px",fontSize:12,fontWeight:700}},
               "\u{1F393} "+s.name+" ("+s.class_name+")",
               React.createElement("span",{style:{cursor:"pointer",color:C.red,fontWeight:900},onClick:()=>unlinkStudent(parent,s)},"\u2715")
             ))
-          ):React.createElement("div",{style:{fontSize:12,color:C.muted,marginBottom:linkTarget===parent.id?10:0}},"Hajaunganishwa na mwanafunzi yeyote bado"),
+          ):React.createElement("div",{style:{fontSize:12,color:C.muted,marginBottom:(linkTarget===parent.id||pwdTarget===parent.id)?10:0}},"Hajaunganishwa na mwanafunzi yeyote bado"),
+          pwdTarget===parent.id&&React.createElement("div",{style:{borderTop:"1px solid "+C.border,paddingTop:10}},
+            React.createElement("div",{className:"flex gap-8 flex-wrap align-center"},
+              React.createElement("input",{className:"input",style:{flex:1,minWidth:160},type:"text",placeholder:"Password mpya (angalau herufi 6)",value:newPwd,onChange:e=>setNewPwd(e.target.value)}),
+              React.createElement("button",{className:"btn-ghost",style:{fontSize:12},onClick:()=>setNewPwd(genPassword())},"\u{1F3B2} Tengeneza"),
+              React.createElement("button",{className:"btn",style:{fontSize:13},disabled:pwdSaving,onClick:()=>savePassword(parent)},pwdSaving?"...":"\u{1F4BE} Weka")
+            ),
+            pwdMsg&&React.createElement("div",{className:pwdMsg.startsWith("\u2705")?"success-box":"error-box",style:{marginTop:8,whiteSpace:"pre-line",fontSize:12.5}},pwdMsg)
+          ),
           linkTarget===parent.id&&React.createElement("div",{style:{borderTop:"1px solid "+C.border,paddingTop:10}},
             React.createElement("input",{className:"input",placeholder:"\u{1F50D} Tafuta mwanafunzi...",value:studentSearch,onChange:e=>setStudentSearch(e.target.value),style:{marginBottom:8}}),
             React.createElement("div",{style:{maxHeight:200,overflowY:"auto"}},
