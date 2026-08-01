@@ -551,7 +551,8 @@ function ParentAccountLink({db:db,user:user}){
   [creating,setCreating]=useState(!1),[createMsg,setCreateMsg]=useState(""),
   [linkTarget,setLinkTarget]=useState(null),[studentSearch,setStudentSearch]=useState(""),[linking,setLinking]=useState(!1),
   [pwdTarget,setPwdTarget]=useState(null),[newPwd,setNewPwd]=useState(""),[pwdSaving,setPwdSaving]=useState(!1),[pwdMsg,setPwdMsg]=useState(""),
-  [deleting,setDeleting]=useState(null),[setupError,setSetupError]=useState(!1);
+  [deleting,setDeleting]=useState(null),[setupError,setSetupError]=useState(!1),
+  [quickPwd,setQuickPwd]=useState("202020"),[quickBusy,setQuickBusy]=useState(null),[quickCreated,setQuickCreated]=useState([]),[quickOpen,setQuickOpen]=useState(!1);
   const loadData=async()=>{
     setLoading(!0);
     const[{data:p},{data:s}]=await Promise.all([
@@ -562,6 +563,11 @@ function ParentAccountLink({db:db,user:user}){
   };
   useEffect(()=>{loadData()},[]);
   const genPassword=()=>"Njm"+Math.floor(100000+Math.random()*900000);
+  const slugifyName=name=>{
+    const parts=(name||"").toLowerCase().replace(/[^a-z\s]/g,"").trim().split(/\s+/).filter(Boolean);
+    if(parts.length===0)return"mzazi"+Math.floor(Math.random()*9000+1000);
+    return parts.length===1?parts[0]:parts[0]+"."+parts[parts.length-1];
+  };
   const callAdminUser=async(payload)=>{
     const{data,error}=await db.functions.invoke("admin-user",{body:payload});
     if(error){
@@ -571,6 +577,32 @@ function ParentAccountLink({db:db,user:user}){
     }
     if(data&&data.ok===!1)throw new Error(data.error||"Imeshindwa");
     return data;
+  };
+  const quickCreateForStudent=async(student)=>{
+    setQuickBusy(student.id);
+    try{
+      const base=slugifyName(student.name);
+      let email="",success=!1,attempt=0,lastErr=null;
+      while(attempt<6&&!success){
+        email=base+(attempt>0?attempt:"")+"@najmanparent.com";
+        try{
+          await callAdminUser({action:"create",email,password:quickPwd,full_name:"Mzazi wa "+student.name,phone:"",role:"parent"});
+          success=!0;
+        }catch(err){
+          lastErr=err;
+          if(/tayari ina akaunti|already registered|already exists/i.test(err.message||"")){attempt++;continue}
+          throw err;
+        }
+      }
+      if(!success)throw lastErr||new Error("Imeshindwa baada ya majaribio kadhaa");
+      const{error:linkErr}=await db.from("students").update({parent_email:email}).eq("id",student.id);
+      if(linkErr)throw linkErr;
+      setQuickCreated(c=>[{studentName:student.name,email,password:quickPwd},...c]);
+      loadData();
+    }catch(err){
+      alert("\u274C "+student.name+": "+(err.message||"Imeshindwa"));
+    }
+    setQuickBusy(null);
   };
   const createParentAccount=async()=>{
     if(!newParent.full_name.trim()||!newParent.email.trim()){setCreateMsg("Jaza jina na email");return}
@@ -634,6 +666,7 @@ function ParentAccountLink({db:db,user:user}){
     loadData();
   };
   const filteredStudents=students.filter(s=>s.status==="Active"&&s.name.toLowerCase().includes(studentSearch.toLowerCase()));
+  const unlinkedStudents=students.filter(s=>s.status==="Active"&&!s.parent_email&&!s.parent2_email);
   return React.createElement("div",null,
     React.createElement("div",{className:"flex justify-between align-center mb-16 flex-wrap gap-8"},
       React.createElement("div",{style:{fontSize:21,fontWeight:900,fontFamily:"'Playfair Display',serif"}},"\u{1F517} Unganisha Wazazi"),
@@ -650,7 +683,37 @@ function ParentAccountLink({db:db,user:user}){
     ),
     loading?React.createElement(Spinner,null):
     React.createElement("div",null,
-      parents.length===0&&React.createElement("div",{className:"card",style:{textAlign:"center",padding:30,color:C.muted}},"Hakuna akaunti za wazazi bado. Bofya '+ Akaunti Mpya ya Mzazi' kuanza."),
+    React.createElement("div",{className:"card",style:{marginBottom:14}},
+      React.createElement("div",{className:"flex justify-between align-center",style:{cursor:"pointer"},onClick:()=>setQuickOpen(!quickOpen)},
+        React.createElement("div",{style:{fontWeight:900,fontSize:15}},"\u26A1 Tengeneza Haraka (Wanafunzi Wasio na Mzazi) \u2014 "+unlinkedStudents.length),
+        React.createElement("span",{style:{fontSize:12,color:C.accent}},quickOpen?"\u25BC":"\u25B6")
+      ),
+      quickOpen&&React.createElement("div",{style:{marginTop:12}},
+        React.createElement("div",{style:{fontSize:12.5,color:C.textSoft,lineHeight:1.7,marginBottom:10}},
+          "Email itatengenezwa kiotomatiki kutoka jina la mtoto (mfano: elias.baraka@najmanparent.com). Password moja itatumika kwa wote hapa chini \u2014 badilisha ukitaka."
+        ),
+        React.createElement("div",{className:"flex gap-8 align-center",style:{marginBottom:12}},
+          React.createElement("span",{style:{fontSize:12,fontWeight:700,color:C.muted}},"Password kwa Wote:"),
+          React.createElement("input",{className:"input",style:{maxWidth:160},value:quickPwd,onChange:e=>setQuickPwd(e.target.value)})
+        ),
+        unlinkedStudents.length===0?React.createElement("div",{style:{fontSize:12,color:C.muted}},"Wanafunzi wote tayari wana mzazi aliyeunganishwa. \u2705"):
+        React.createElement("div",{style:{maxHeight:280,overflowY:"auto",border:"1px solid "+C.border,borderRadius:8}},
+          unlinkedStudents.map(s=>React.createElement("div",{key:s.id,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px",borderBottom:"1px solid "+C.border,fontSize:13}},
+            React.createElement("span",null,s.name+" ("+s.class_name+")"),
+            React.createElement("button",{className:"btn",style:{padding:"4px 12px",fontSize:12},disabled:quickBusy===s.id,onClick:()=>quickCreateForStudent(s)},quickBusy===s.id?"\u23F3...":"\u26A1 Tengeneza")
+          ))
+        ),
+        quickCreated.length>0&&React.createElement("div",{style:{marginTop:14}},
+          React.createElement("div",{style:{fontWeight:800,fontSize:13,marginBottom:6,color:C.green}},"\u2705 Zilizotengenezwa (nakili kumpa mzazi):"),
+          React.createElement("div",{style:{maxHeight:220,overflowY:"auto"}},
+            quickCreated.map((c,idx)=>React.createElement("div",{key:idx,style:{padding:"6px 10px",background:"rgba(34,197,94,.08)",borderRadius:6,marginBottom:4,fontSize:12}},
+              React.createElement("b",null,c.studentName),": "+c.email+" / "+c.password
+            ))
+          )
+        )
+      )
+    ),
+    parents.length===0&&React.createElement("div",{className:"card",style:{textAlign:"center",padding:30,color:C.muted}},"Hakuna akaunti za wazazi bado. Bofya '+ Akaunti Mpya ya Mzazi' kuanza."),
       parents.map(parent=>{
         const linked=linkedStudentsFor(parent);
         return React.createElement("div",{key:parent.id,className:"card",style:{marginBottom:12}},
