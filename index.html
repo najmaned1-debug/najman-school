@@ -552,7 +552,7 @@ function ParentAccountLink({db:db,user:user}){
   [linkTarget,setLinkTarget]=useState(null),[studentSearch,setStudentSearch]=useState(""),[linking,setLinking]=useState(!1),
   [pwdTarget,setPwdTarget]=useState(null),[newPwd,setNewPwd]=useState(""),[pwdSaving,setPwdSaving]=useState(!1),[pwdMsg,setPwdMsg]=useState(""),
   [deleting,setDeleting]=useState(null),[setupError,setSetupError]=useState(!1),
-  [quickPwd,setQuickPwd]=useState("202020"),[quickBusy,setQuickBusy]=useState(null),[quickCreated,setQuickCreated]=useState([]),[quickOpen,setQuickOpen]=useState(!1);
+  [quickPwd,setQuickPwd]=useState("najman2020"),[quickBusy,setQuickBusy]=useState(null),[quickCreated,setQuickCreated]=useState([]),[quickOpen,setQuickOpen]=useState(!1);
   const loadData=async()=>{
     setLoading(!0);
     const[{data:p},{data:s}]=await Promise.all([
@@ -566,7 +566,7 @@ function ParentAccountLink({db:db,user:user}){
   const slugifyName=name=>{
     const parts=(name||"").toLowerCase().replace(/[^a-z\s]/g,"").trim().split(/\s+/).filter(Boolean);
     if(parts.length===0)return"mzazi"+Math.floor(Math.random()*9000+1000);
-    return parts.length===1?parts[0]:parts[0]+"."+parts[parts.length-1];
+    return parts[0];
   };
   const callAdminUser=async(payload)=>{
     const{data,error}=await db.functions.invoke("admin-user",{body:payload});
@@ -581,16 +581,19 @@ function ParentAccountLink({db:db,user:user}){
   const quickCreateForStudent=async(student)=>{
     setQuickBusy(student.id);
     try{
-      const base=slugifyName(student.name);
-      let email="",success=!1,attempt=0,lastErr=null;
-      while(attempt<6&&!success){
-        email=base+(attempt>0?attempt:"")+"@najmanparent.com";
+      const parts=(student.name||"").toLowerCase().replace(/[^a-z\s]/g,"").trim().split(/\s+/).filter(Boolean);
+      const first=parts[0]||("mzazi"+Math.floor(Math.random()*9000+1000));
+      const lastInitial=parts.length>1?parts[parts.length-1][0]:"";
+      const candidates=[first,first+lastInitial,first+lastInitial+"2",first+lastInitial+"3",first+lastInitial+"4",first+Math.floor(Math.random()*90+10)];
+      let email="",success=!1,lastErr=null;
+      for(const cand of candidates){
+        email=cand+"@najman.tz";
         try{
           await callAdminUser({action:"create",email,password:quickPwd,full_name:"Mzazi wa "+student.name,phone:"",role:"parent"});
-          success=!0;
+          success=!0;break;
         }catch(err){
           lastErr=err;
-          if(/tayari ina akaunti|already registered|already exists/i.test(err.message||"")){attempt++;continue}
+          if(/tayari ina akaunti|already registered|already exists/i.test(err.message||"")){continue}
           throw err;
         }
       }
@@ -690,7 +693,7 @@ function ParentAccountLink({db:db,user:user}){
       ),
       quickOpen&&React.createElement("div",{style:{marginTop:12}},
         React.createElement("div",{style:{fontSize:12.5,color:C.textSoft,lineHeight:1.7,marginBottom:10}},
-          "Email itatengenezwa kiotomatiki kutoka jina la mtoto (mfano: elias.baraka@najmanparent.com). Password moja itatumika kwa wote hapa chini \u2014 badilisha ukitaka."
+          "Email itatengenezwa kiotomatiki kutoka jina la kwanza la mtoto (mfano: elias@najman.tz). Password moja itatumika kwa wote hapa chini \u2014 badilisha ukitaka."
         ),
         React.createElement("div",{className:"flex gap-8 align-center",style:{marginBottom:12}},
           React.createElement("span",{style:{fontSize:12,fontWeight:700,color:C.muted}},"Password kwa Wote:"),
