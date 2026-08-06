@@ -618,7 +618,7 @@ ${e.phone?"\u{1F4F2} SMS sent to parent!":""}`)}}o(),r(!1),h(null),k(f)},i=async
         [mfSelMonth,mfSetSelMonth]=useState(""),
         [mfSelClass,mfSetSelClass]=useState("All"),
         [mfPage,mfSetPage]=useState(1);
-  useEffect(()=>{l.from("payments").select("student_id,amount,month").then(({data:o})=>mfSetPay(o||[]))},[]);
+  useEffect(()=>{l.from("payments").select("student_id,amount,month,payment_date,created_at").then(({data:o})=>mfSetPay(o||[]))},[]);
   useEffect(()=>{mfSetPage(1)},[mfSelClass,mfSelMonth]);
   const mfMonthList=(()=>{
     const now=new Date(),y=now.getFullYear(),startY=now.getMonth()>=6?y:y-1,start=new Date(startY,6,1),list=[];
@@ -628,16 +628,30 @@ ${e.phone?"\u{1F4F2} SMS sent to parent!":""}`)}}o(),r(!1),h(null),k(f)},i=async
   })();
   useEffect(()=>{if(!mfSelMonth&&mfMonthList.length)mfSetSelMonth(mfMonthList[mfMonthList.length-1].label)},[mfMonthList.length]);
   const mfCurEntry=mfMonthList.find(m=>m.label===mfSelMonth)||mfMonthList[mfMonthList.length-1];
-  const mfPaidFor=(sid,ml)=>mfPay.filter(p=>p.student_id===sid&&p.month===ml).reduce((a,p)=>a+Number(p.amount||0),0);
-  const mfEnrolled=(st,md)=>{if(!st.admission_date||!md)return!0;const ad=new Date(st.admission_date),eom=new Date(md.getFullYear(),md.getMonth()+1,0);return ad<=eom};
-  const mfRows=(s||[]).filter(st=>(mfSelClass==="All"||st.class_name===mfSelClass)).filter(st=>mfEnrolled(st,mfCurEntry&&mfCurEntry.date)).map(st=>{const expected=Number(st.term_fee||0),paid=mfPaidFor(st.id,mfSelMonth),debt=Math.max(0,expected-paid);return{...st,expected,paid,debt}}).sort((a,b)=>b.debt-a.debt);
+  const mfEndOfMonth=(d)=>d?new Date(d.getFullYear(),d.getMonth()+1,0,23,59,59):new Date();
+  const mfPaidCumulative=(sid,uptoDate)=>mfPay.filter(p=>p.student_id===sid).reduce((sum,p)=>{
+    let pd=p.payment_date?new Date(p.payment_date):(p.created_at?new Date(p.created_at):null);
+    if(!pd||isNaN(pd.getTime())){const found=mfMonthList.find(m=>m.label===p.month);pd=found?found.date:null}
+    if(!pd)return sum;
+    return pd<=uptoDate?sum+Number(p.amount||0):sum
+  },0);
+  const mfPaidThisMonthOnly=(sid,md)=>{if(!md)return 0;const start=new Date(md.getFullYear(),md.getMonth(),1),end=mfEndOfMonth(md);return mfPay.filter(p=>p.student_id===sid).reduce((sum,p)=>{let pd=p.payment_date?new Date(p.payment_date):(p.created_at?new Date(p.created_at):null);if(!pd||isNaN(pd.getTime())){const found=mfMonthList.find(m=>m.label===p.month);pd=found?found.date:null}if(!pd)return sum;return(pd>=start&&pd<=end)?sum+Number(p.amount||0):sum},0)};
+  const mfEnrolled=(st,md)=>{if(!st.admission_date||!md)return!0;const ad=new Date(st.admission_date),eom=mfEndOfMonth(md);return ad<=eom};
+  const mfRows=(s||[]).filter(st=>(mfSelClass==="All"||st.class_name===mfSelClass)).filter(st=>mfEnrolled(st,mfCurEntry&&mfCurEntry.date)).map(st=>{
+    const refDate=mfEndOfMonth(mfCurEntry&&mfCurEntry.date);
+    const expected=getExpectedFeeForStudent(st,refDate);
+    const paid=mfPaidCumulative(st.id,refDate);
+    const paidThisMonth=mfPaidThisMonthOnly(st.id,mfCurEntry&&mfCurEntry.date);
+    const debt=Math.max(0,expected-paid);
+    return{...st,expected,paid,paidThisMonth,debt}
+  }).sort((a,b)=>b.debt-a.debt);
   const mfTotalExp=mfRows.reduce((a,r)=>a+r.expected,0),mfTotalPaid=mfRows.reduce((a,r)=>a+r.paid,0),mfTotalDebt=mfRows.reduce((a,r)=>a+r.debt,0);
   const mfTotalPages=Math.max(1,Math.ceil(mfRows.length/20)),mfPageItems=mfRows.slice((mfPage-1)*20,mfPage*20);
   const mfPrint=()=>{
     const o=window.open("","_blank");
     o.document.write(`<html><head><title>Monthly Fee Report</title><style>body{font-family:Arial;padding:20px;}h2{text-align:center;}table{width:100%;border-collapse:collapse;font-size:12px;}th,td{border:1px solid #ccc;padding:5px 9px;}th{background:#f5a623;}.r{color:#c00;font-weight:700;}@page{size:A4;margin:14mm;}</style></head><body>
-    <h2>NAJMAN \u2014 Monthly Fee Report: ${mfSelMonth}</h2><p style="text-align:center">${new Date().toLocaleDateString()} | ${mfRows.length} students | Expected: TZS ${mfTotalExp.toLocaleString()} | Paid: TZS ${mfTotalPaid.toLocaleString()} | Debt: TZS ${mfTotalDebt.toLocaleString()}</p>
-    <table><thead><tr><th>#</th><th>Name</th><th>Class</th><th>Expected</th><th>Paid</th><th>Debt</th></tr></thead><tbody>
+    <h2>NAJMAN \u2014 Monthly Fee Report: hadi ${mfSelMonth}</h2><p style="text-align:center">${new Date().toLocaleDateString()} | ${mfRows.length} students | Expected: TZS ${mfTotalExp.toLocaleString()} | Paid: TZS ${mfTotalPaid.toLocaleString()} | Debt: TZS ${mfTotalDebt.toLocaleString()}</p>
+    <table><thead><tr><th>#</th><th>Name</th><th>Class</th><th>Expected (hadi)</th><th>Paid (hadi)</th><th>Debt</th></tr></thead><tbody>
     ${mfRows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.name}</td><td>${r.class_name}</td><td>${r.expected.toLocaleString()}</td><td>${r.paid.toLocaleString()}</td><td class="r">${r.debt.toLocaleString()}</td></tr>`).join("")}
     </tbody></table></body></html>`),o.document.close(),setTimeout(()=>o.print(),500)
   };
@@ -656,9 +670,9 @@ ${e.phone?"\u{1F4F2} SMS sent to parent!":""}`)}}o(),r(!1),h(null),k(f)},i=async
       )
     ),
     React.createElement("div",{className:"flex gap-10 mb-14 flex-wrap"},
-      [{l:`Ilitegemewa (${mfSelMonth})`,v:`TZS ${mfTotalExp.toLocaleString()}`,c:C.accent},
-       {l:`Ililipwa (${mfSelMonth})`,v:`TZS ${mfTotalPaid.toLocaleString()}`,c:C.green},
-       {l:`Deni (${mfSelMonth})`,v:`TZS ${mfTotalDebt.toLocaleString()}`,c:C.red}
+      [{l:`Ilitegemewa hadi ${mfSelMonth}`,v:`TZS ${mfTotalExp.toLocaleString()}`,c:C.accent},
+       {l:`Ililipwa hadi ${mfSelMonth}`,v:`TZS ${mfTotalPaid.toLocaleString()}`,c:C.green},
+       {l:`Deni hadi ${mfSelMonth}`,v:`TZS ${mfTotalDebt.toLocaleString()}`,c:C.red}
       ].map(o=>React.createElement("div",{key:o.l,className:"stat-card",style:{borderTop:`3px solid ${o.c}`,flex:1}},
         React.createElement("div",{style:{fontSize:16,fontWeight:900,color:o.c}},o.v),
         React.createElement("div",{style:{fontSize:13,color:C.textSoft,marginTop:2}},o.l)
@@ -666,12 +680,13 @@ ${e.phone?"\u{1F4F2} SMS sent to parent!":""}`)}}o(),r(!1),h(null),k(f)},i=async
     ),
     React.createElement("div",{className:"card"},
       React.createElement("table",{className:"table"},
-        React.createElement("thead",null,React.createElement("tr",null,["#","Jina","Darasa","Ilitegemewa","Ililipwa","Deni"].map(o=>React.createElement("th",{key:o},o)))),
+        React.createElement("thead",null,React.createElement("tr",null,["#","Jina","Darasa","Ilitegemewa (hadi)","Ililipwa mwezi huu","Ililipwa (hadi)","Deni"].map(o=>React.createElement("th",{key:o},o)))),
         React.createElement("tbody",null,mfPageItems.map((r,i)=>React.createElement("tr",{key:r.id},
           React.createElement("td",null,(mfPage-1)*20+i+1),
           React.createElement("td",{style:{fontWeight:700}},r.name),
           React.createElement("td",null,r.class_name),
           React.createElement("td",null,r.expected.toLocaleString()),
+          React.createElement("td",null,r.paidThisMonth.toLocaleString()),
           React.createElement("td",null,r.paid.toLocaleString()),
           React.createElement("td",{style:{color:r.debt>0?C.red:C.green,fontWeight:700}},r.debt.toLocaleString())
         )))
