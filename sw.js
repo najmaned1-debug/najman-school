@@ -2,7 +2,7 @@
 // Caches the app shell + CDN libraries so the app opens instantly after the first install.
 // NEVER caches Supabase requests (auth/data) — those must always hit the network live.
 
-const CACHE_NAME = "najman-sms-v4";
+const CACHE_NAME = "najman-sms-v5";
 
 const PRECACHE_URLS = [
   "/",
@@ -49,11 +49,34 @@ self.addEventListener("fetch", (event) => {
   // Only handle GET requests for the app shell + known CDN libraries.
   if (event.request.method !== "GET") return;
 
-  // Navigation requests (typing a URL, opening the app, clicking a link) are left to the
-  // browser/network directly. Cloudflare Pages sometimes redirects /index.html -> / and
-  // Chrome refuses to fulfil a navigation with a "redirected" response from a service
-  // worker (net::ERR_FAILED). Static sub-resources are still served cache-first below.
-  if (event.request.mode === "navigate") return;
+  // Navigation requests (opening the app, typing the URL, tapping the home-screen icon):
+  // serve the cached shell INSTANTLY if we have one (huge win on weak/slow networks),
+  // then quietly refresh the cache in the background for next time.
+  // Safety: we only ever cache a NON-redirected "/" response, and if anything about
+  // reading/serving the cache goes wrong, we fall straight back to a normal network
+  // fetch — the app never gets stuck.
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      caches.match("/").then((cached) => {
+        const networkFetch = fetch(event.request)
+          .then((response) => {
+            if (response && response.status === 200 && !response.redirected) {
+              const clone = response.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put("/", clone));
+            }
+            return response;
+          })
+          .catch(() => null);
+
+        if (cached) {
+          event.waitUntil(networkFetch);
+          return cached;
+        }
+        return networkFetch.then((r) => r || fetch(event.request));
+      }).catch(() => fetch(event.request))
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
