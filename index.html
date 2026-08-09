@@ -327,26 +327,32 @@ const{useState,useEffect,useRef,useCallback}=React,APP_VERSION="7.0",SUPA_URL="h
   useEffect(()=>{fetchMedia()},[]);
   useEffect(()=>{setGPage(1)},[filterType]);
 
-  const handleUpload=async e=>{
-    const file=e.target.files[0];
-    if(!file)return;
+  const[uploadProgress,setUploadProgress]=useState({done:0,total:0});
+  const uploadOneFile=async file=>{
     const isVideo=file.type.startsWith("video/");
     const maxSize=isVideo?50*1024*1024:8*1024*1024;
-    if(file.size>maxSize){alert(`\u26A0\uFE0F Faili kubwa mno. Kikomo ni ${isVideo?"MB 50 (video)":"MB 8 (picha)"}.`);e.target.value="";return}
-    setUploading(!0);
+    if(file.size>maxSize){alert(`\u26A0\uFE0F "${file.name}" ni kubwa mno. Kikomo ni ${isVideo?"MB 50 (video)":"MB 8 (picha)"}.`);return!1}
     try{
       const ext=(file.name.split(".").pop()||(isVideo?"mp4":"jpg")).toLowerCase();
       const path=`${isVideo?"videos":"photos"}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const{error}=await l.storage.from("school-media").upload(path,file);
-      if(error){alert("\u26A0\uFE0F Upload imeshindwa: "+error.message);setUploading(!1);e.target.value="";return}
+      if(error){alert(`\u26A0\uFE0F "${file.name}" imeshindwa: `+error.message);return!1}
       const{data:urlData}=l.storage.from("school-media").getPublicUrl(path);
       const uploaderName=(g.profile&&(g.profile.name||g.profile.full_name))||g.email||"Admin";
       await l.from("school_media").insert({media_type:isVideo?"video":"photo",url:urlData.publicUrl,caption:caption||null,uploaded_by:uploaderName});
-      setCaption(""),e.target.value="",fetchMedia();
-    }catch(err){alert("\u26A0\uFE0F Hitilafu: "+err.message)}
-    setUploading(!1);
+      return!0;
+    }catch(err){alert(`\u26A0\uFE0F "${file.name}": `+err.message);return!1}
   };
-
+  const handleUpload=async e=>{
+    const files=Array.from(e.target.files||[]);
+    if(files.length===0)return;
+    setUploading(!0),setUploadProgress({done:0,total:files.length});
+    for(let i=0;i<files.length;i++){
+      await uploadOneFile(files[i]);
+      setUploadProgress({done:i+1,total:files.length});
+    }
+    setCaption(""),e.target.value="",fetchMedia(),setUploading(!1);
+  };
   const handleDelete=async item=>{
     if(!window.confirm("Una uhakika unataka kufuta hii?"))return;
     try{
@@ -376,9 +382,18 @@ const{useState,useEffect,useRef,useCallback}=React,APP_VERSION="7.0",SUPA_URL="h
     canManage&&React.createElement("div",{className:"card",style:{marginBottom:18}},
       React.createElement("div",{style:{fontWeight:800,marginBottom:10,fontSize:15}},"\u2795 Pakia Picha au Video Mpya"),
       React.createElement("input",{type:"text",className:"input",placeholder:"Maelezo mafupi (hiari) \u2014 mfano: Siku ya Michezo 2026",value:caption,onChange:e=>setCaption(e.target.value),style:{marginBottom:10,width:"100%"}}),
-      React.createElement("input",{type:"file",accept:"image/*,video/*",onChange:handleUpload,disabled:uploading,style:{fontSize:14}}),
-      uploading&&React.createElement("div",{style:{marginTop:10,color:C.accent,fontSize:14}},"\u23F3 Inapakia... Tafadhali subiri."),
-      React.createElement("div",{style:{marginTop:8,fontSize:12,color:C.muted}},"Picha: hadi MB 8  \u2022  Video: hadi MB 50")
+      React.createElement("div",{className:"flex gap-10 flex-wrap",style:{alignItems:"center"}},
+        React.createElement("label",{className:"btn",style:{fontSize:14,padding:"9px 16px",cursor:uploading?"not-allowed":"pointer",opacity:uploading?.6:1}},
+          "\u{1F5BC}\u{FE0F} Chagua kutoka Gallery",
+          React.createElement("input",{type:"file",accept:"image/*,video/*",multiple:!0,onChange:handleUpload,disabled:uploading,style:{display:"none"}})
+        ),
+        React.createElement("label",{className:"btn-ghost",style:{fontSize:14,padding:"9px 16px",cursor:uploading?"not-allowed":"pointer",opacity:uploading?.6:1}},
+          "\u{1F4F7} Piga Picha/Video",
+          React.createElement("input",{type:"file",accept:"image/*,video/*",capture:"environment",onChange:handleUpload,disabled:uploading,style:{display:"none"}})
+        )
+      ),
+      uploading&&React.createElement("div",{style:{marginTop:10,color:C.accent,fontSize:14}},`\u23F3 Inapakia ${uploadProgress.done}/${uploadProgress.total}... Tafadhali subiri.`),
+      React.createElement("div",{style:{marginTop:8,fontSize:12,color:C.muted}},"Picha: hadi MB 8  \u2022  Video: hadi MB 50  \u2022  Unaweza kuchagua faili zaidi ya moja kwa mara moja")
     ),
 
     loading?React.createElement(Spinner,null):
