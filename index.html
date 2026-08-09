@@ -323,6 +323,7 @@ const{useState,useEffect,useRef,useCallback}=React,APP_VERSION="7.0",SUPA_URL="h
   const[items,setItems]=useState([]),[loading,setLoading]=useState(!0),[uploading,setUploading]=useState(!1),
         [caption,setCaption]=useState(""),[filterType,setFilterType]=useState("All"),
         [lightbox,setLightbox]=useState(null),[gPage,setGPage]=useState(1);
+  const galleryRef=useRef(null),photoRef=useRef(null),videoRef=useRef(null);
   const fetchMedia=()=>{setLoading(!0),l.from("school_media").select("*").order("created_at",{ascending:!1}).then(({data})=>{setItems(data||[]),setLoading(!1)})};
   useEffect(()=>{fetchMedia()},[]);
   useEffect(()=>{setGPage(1)},[filterType]);
@@ -382,19 +383,13 @@ const{useState,useEffect,useRef,useCallback}=React,APP_VERSION="7.0",SUPA_URL="h
     canManage&&React.createElement("div",{className:"card",style:{marginBottom:18}},
       React.createElement("div",{style:{fontWeight:800,marginBottom:10,fontSize:15}},"\u2795 Pakia Picha au Video Mpya"),
       React.createElement("input",{type:"text",className:"input",placeholder:"Maelezo mafupi (hiari) \u2014 mfano: Siku ya Michezo 2026",value:caption,onChange:e=>setCaption(e.target.value),style:{marginBottom:10,width:"100%"}}),
+      React.createElement("input",{ref:galleryRef,type:"file",accept:"image/*,video/*",multiple:!0,onChange:handleUpload,disabled:uploading,style:{display:"none"}}),
+      React.createElement("input",{ref:photoRef,type:"file",accept:"image/*",capture:"environment",onChange:handleUpload,disabled:uploading,style:{display:"none"}}),
+      React.createElement("input",{ref:videoRef,type:"file",accept:"video/*",capture:"environment",onChange:handleUpload,disabled:uploading,style:{display:"none"}}),
       React.createElement("div",{className:"flex gap-10 flex-wrap",style:{alignItems:"center"}},
-        React.createElement("label",{className:"btn",style:{fontSize:14,padding:"9px 16px",cursor:uploading?"not-allowed":"pointer",opacity:uploading?.6:1}},
-          "\u{1F5BC}\u{FE0F} Chagua kutoka Gallery",
-          React.createElement("input",{type:"file",accept:"image/*,video/*",multiple:!0,onChange:handleUpload,disabled:uploading,style:{display:"none"}})
-        ),
-        React.createElement("label",{className:"btn-ghost",style:{fontSize:14,padding:"9px 16px",cursor:uploading?"not-allowed":"pointer",opacity:uploading?.6:1}},
-          "\u{1F4F7} Piga Picha",
-          React.createElement("input",{type:"file",accept:"image/*",capture:"environment",onChange:handleUpload,disabled:uploading,style:{display:"none"}})
-        ),
-        React.createElement("label",{className:"btn-ghost",style:{fontSize:14,padding:"9px 16px",cursor:uploading?"not-allowed":"pointer",opacity:uploading?.6:1}},
-          "\u{1F3A5} Piga Video",
-          React.createElement("input",{type:"file",accept:"video/*",capture:"environment",onChange:handleUpload,disabled:uploading,style:{display:"none"}})
-        )
+        React.createElement("button",{type:"button",className:"btn",style:{fontSize:14,padding:"9px 16px"},disabled:uploading,onClick:()=>galleryRef.current&&galleryRef.current.click()},"\u{1F5BC}\u{FE0F} Chagua kutoka Gallery"),
+        React.createElement("button",{type:"button",className:"btn-ghost",style:{fontSize:14,padding:"9px 16px"},disabled:uploading,onClick:()=>photoRef.current&&photoRef.current.click()},"\u{1F4F7} Piga Picha"),
+        React.createElement("button",{type:"button",className:"btn-ghost",style:{fontSize:14,padding:"9px 16px"},disabled:uploading,onClick:()=>videoRef.current&&videoRef.current.click()},"\u{1F3A5} Piga Video")
       ),
       uploading&&React.createElement("div",{style:{marginTop:10,color:C.accent,fontSize:14}},`\u23F3 Inapakia ${uploadProgress.done}/${uploadProgress.total}... Tafadhali subiri.`),
       React.createElement("div",{style:{marginTop:8,fontSize:12,color:C.muted}},"Picha: hadi MB 8  \u2022  Video: hadi MB 50  \u2022  Unaweza kuchagua faili zaidi ya moja kwa mara moja")
