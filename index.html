@@ -388,8 +388,12 @@ const{useState,useEffect,useRef,useCallback}=React,APP_VERSION="7.0",SUPA_URL="h
           React.createElement("input",{type:"file",accept:"image/*,video/*",multiple:!0,onChange:handleUpload,disabled:uploading,style:{display:"none"}})
         ),
         React.createElement("label",{className:"btn-ghost",style:{fontSize:14,padding:"9px 16px",cursor:uploading?"not-allowed":"pointer",opacity:uploading?.6:1}},
-          "\u{1F4F7} Piga Picha/Video",
-          React.createElement("input",{type:"file",accept:"image/*,video/*",capture:"environment",onChange:handleUpload,disabled:uploading,style:{display:"none"}})
+          "\u{1F4F7} Piga Picha",
+          React.createElement("input",{type:"file",accept:"image/*",capture:"environment",onChange:handleUpload,disabled:uploading,style:{display:"none"}})
+        ),
+        React.createElement("label",{className:"btn-ghost",style:{fontSize:14,padding:"9px 16px",cursor:uploading?"not-allowed":"pointer",opacity:uploading?.6:1}},
+          "\u{1F3A5} Piga Video",
+          React.createElement("input",{type:"file",accept:"video/*",capture:"environment",onChange:handleUpload,disabled:uploading,style:{display:"none"}})
         )
       ),
       uploading&&React.createElement("div",{style:{marginTop:10,color:C.accent,fontSize:14}},`\u23F3 Inapakia ${uploadProgress.done}/${uploadProgress.total}... Tafadhali subiri.`),
