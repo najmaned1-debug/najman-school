@@ -188,7 +188,7 @@ select.input option{background:var(--input-bg);color:var(--text);font-weight:700
 // Auto-refresh mechanism: whenever APP_VERSION changes (bumped on every update),
 // force a one-time hard reload + clear any stale service-worker caches, so
 // the person never has to manually "Clear site data" again.
-window.__APP_VERSION = "2026-07-18-015";
+window.__APP_VERSION = "2026-08-16-016";
 (function(){
   try{
     var stored = localStorage.getItem("najman_app_version");
@@ -240,23 +240,21 @@ window.__APP_VERSION = "2026-07-18-015";
 window.__criticalFailed = false;
 function __showOfflineScreen(){
   var el = document.getElementById('__boot_loading');
-  if (!el) return;
+  if (!el) return; /* app already mounted — nothing to replace */
   el.innerHTML =
     '<div style="font-size:34px;margin-bottom:12px;">📡</div>' +
     '<div style="font-size:16px;font-weight:800;margin-bottom:6px;">Hakuna Mtandao</div>' +
     '<div style="font-size:13px;color:#8a93ab;max-width:280px;margin-bottom:18px;line-height:1.5;">Simu/Kompyuta yako haina mtandao kwa sasa. Washa WiFi au Data, kisha bonyeza jaribu tena.</div>' +
     '<button onclick="location.reload()" style="background:#f5a623;color:#0b1120;border:none;padding:12px 28px;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;">🔄 Jaribu Tena</button>';
 }
-/* If the device is already offline when the page opens, tell the user
-   immediately instead of making them wait for the 12s CDN timeout. */
-if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-  __showOfflineScreen();
-}
-window.addEventListener('offline', __showOfflineScreen);
+/* NOTE: we deliberately do NOT show the offline screen the instant the
+   page opens offline — a service worker (sw.js) caches the app shell
+   (React/ReactDOM/Supabase + this page), so on a repeat visit the app
+   can boot and show Sign In straight from cache even with no internet.
+   We only fall back to the offline screen if a script genuinely fails
+   to load (i.e. it's neither on the network nor in the cache). */
 window.addEventListener('online', function(){
-  /* Connection came back while the offline screen was showing — reload
-     automatically so the app can fetch what it needs and continue. */
-  if (window.__criticalFailed || (navigator.onLine === false)) location.reload();
+  if (window.__criticalFailed) location.reload();
 });
 function __markFailed(name){
   window.__criticalFailed = true;
