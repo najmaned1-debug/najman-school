@@ -188,7 +188,7 @@ select.input option{background:var(--input-bg);color:var(--text);font-weight:700
 // Auto-refresh mechanism: whenever APP_VERSION changes (bumped on every update),
 // force a one-time hard reload + clear any stale service-worker caches, so
 // the person never has to manually "Clear site data" again.
-window.__APP_VERSION = "2026-08-16-023";
+window.__APP_VERSION = "2026-08-16-024";
 (function(){
   try{
     var stored = localStorage.getItem("najman_app_version");
@@ -779,12 +779,12 @@ ${e.phone?"\u{1F4F2} SMS sent to parent!":""}`)}}o(),r(!1),h(null),k(f)},i=async
   const mfCurEntry=mfMonthList.find(m=>m.label===mfSelMonth)||mfMonthList[mfMonthList.length-1];
   const mfEndOfMonth=(d)=>d?new Date(d.getFullYear(),d.getMonth()+1,0,23,59,59):new Date();
   const mfPaidCumulative=(sid,uptoDate)=>mfPay.filter(p=>p.student_id===sid).reduce((sum,p)=>{
-    let pd=p.payment_date?new Date(p.payment_date):(p.created_at?new Date(p.created_at):null);
-    if(!pd||isNaN(pd.getTime())){const found=mfMonthList.find(m=>m.label===p.month);pd=found?found.date:null}
-    if(!pd)return sum;
+    const found=mfMonthList.find(m=>m.label===p.month);
+    let pd=found?found.date:(p.payment_date?new Date(p.payment_date):(p.created_at?new Date(p.created_at):null));
+    if(!pd||isNaN(pd.getTime()))return sum;
     return pd<=uptoDate?sum+Number(p.amount||0):sum
   },0);
-  const mfPaidThisMonthOnly=(sid,md)=>{if(!md)return 0;const start=new Date(md.getFullYear(),md.getMonth(),1),end=mfEndOfMonth(md);return mfPay.filter(p=>p.student_id===sid).reduce((sum,p)=>{let pd=p.payment_date?new Date(p.payment_date):(p.created_at?new Date(p.created_at):null);if(!pd||isNaN(pd.getTime())){const found=mfMonthList.find(m=>m.label===p.month);pd=found?found.date:null}if(!pd)return sum;return(pd>=start&&pd<=end)?sum+Number(p.amount||0):sum},0)};
+  const mfPaidThisMonthOnly=(sid,md)=>{if(!md)return 0;const targetLabel=MONTHS[md.getMonth()];return mfPay.filter(p=>p.student_id===sid&&p.month===targetLabel).reduce((sum,p)=>sum+Number(p.amount||0),0)};
   const mfEnrolled=(st,md)=>{if(!st.admission_date||!md)return!0;const ad=new Date(st.admission_date),eff=ad.getDate()>=25?new Date(ad.getFullYear(),ad.getMonth()+1,1):new Date(ad.getFullYear(),ad.getMonth(),1),eom=mfEndOfMonth(md);return eff<=eom};
   const mfRows=(s||[]).filter(st=>(mfSelClass==="All"||st.class_name===mfSelClass)).filter(st=>mfEnrolled(st,mfCurEntry&&mfCurEntry.date)).map(st=>{
     const refDate=mfEndOfMonth(mfCurEntry&&mfCurEntry.date);
