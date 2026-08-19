@@ -188,7 +188,7 @@ select.input option{background:var(--input-bg);color:var(--text);font-weight:700
 // Auto-refresh mechanism: whenever APP_VERSION changes (bumped on every update),
 // force a one-time hard reload + clear any stale service-worker caches, so
 // the person never has to manually "Clear site data" again.
-window.__APP_VERSION = "2026-08-16-027";
+window.__APP_VERSION = "2026-08-16-028";
 (function(){
   try{
     var stored = localStorage.getItem("najman_app_version");
@@ -795,6 +795,13 @@ ${e.phone?"\u{1F4F2} SMS sent to parent!":""}`)}}o(),r(!1),h(null),k(f)},i=async
     return{...st,expected,paid,paidThisMonth,debt}
   }).sort((a,b)=>b.debt-a.debt);
   const mfTotalExp=mfRows.reduce((a,r)=>a+r.expected,0),mfTotalPaid=mfRows.reduce((a,r)=>a+r.paid,0),mfTotalDebt=mfRows.reduce((a,r)=>a+r.debt,0);
+  const mfClassSummary=(mfCls||[]).map(cls=>{
+    const refDate=mfEndOfMonth(mfCurEntry&&mfCurEntry.date);
+    const clsStudents=(s||[]).filter(st=>st.class_name===cls.name&&mfEnrolled(st,mfCurEntry&&mfCurEntry.date));
+    const exp=clsStudents.reduce((sum,st)=>sum+getExpectedFeeForStudent(st,refDate),0);
+    const paid=clsStudents.reduce((sum,st)=>sum+mfPaidCumulative(st.id,refDate),0);
+    return{name:cls.name,count:clsStudents.length,exp,paid,bal:Math.max(0,exp-paid)}
+  }).filter(c=>c.count>0);
   const mfTotalPages=Math.max(1,Math.ceil(mfRows.length/20)),mfPageItems=mfRows.slice((mfPage-1)*20,mfPage*20);
   const[mfSmsSending,mfSetSmsSending]=useState(!1),[mfSmsProgress,mfSetSmsProgress]=useState({done:0,total:0}),[mfSmsResult,mfSetSmsResult]=useState(null);
   const mfDebtorsWithPhone=mfRows.filter(r=>r.debt>0);
@@ -854,6 +861,20 @@ Endelea?`;
         React.createElement("div",{style:{fontSize:16,fontWeight:900,color:o.c}},o.v),
         React.createElement("div",{style:{fontSize:13,color:C.textSoft,marginTop:2}},o.l)
       ))
+    ),
+    React.createElement("div",{className:"card",style:{marginBottom:14}},
+      React.createElement("div",{style:{fontWeight:900,fontSize:15,marginBottom:10}},`\uD83C\uDFEB Muhtasari kwa Darasa \u2014 hadi ${mfSelMonth}`),
+      React.createElement("table",{className:"table"},
+        React.createElement("thead",null,React.createElement("tr",null,["Darasa","Wanafunzi","Ilitegemewa","Ililipwa","Deni"].map(o=>React.createElement("th",{key:o},o)))),
+        React.createElement("tbody",null,mfClassSummary.map(c=>React.createElement("tr",{key:c.name},
+          React.createElement("td",{style:{fontWeight:700}},c.name),
+          React.createElement("td",null,c.count),
+          React.createElement("td",null,c.exp.toLocaleString()),
+          React.createElement("td",{className:"text-green"},c.paid.toLocaleString()),
+          React.createElement("td",{style:{color:c.bal>0?C.red:C.green,fontWeight:700}},c.bal.toLocaleString())
+        )))
+      ),
+      mfClassSummary.length===0&&React.createElement("div",{style:{padding:12,color:C.muted,textAlign:"center"}},"Hakuna data ya madarasa kwa mwezi huu")
     ),
     React.createElement("div",{className:"card"},
       React.createElement("table",{className:"table"},
