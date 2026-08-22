@@ -188,7 +188,7 @@ select.input option{background:var(--input-bg);color:var(--text);font-weight:700
 // Auto-refresh mechanism: whenever APP_VERSION changes (bumped on every update),
 // force a one-time hard reload + clear any stale service-worker caches, so
 // the person never has to manually "Clear site data" again.
-window.__APP_VERSION = "2026-08-16-032";
+window.__APP_VERSION = "2026-08-16-034";
 (function(){
   try{
     var stored = localStorage.getItem("najman_app_version");
@@ -506,11 +506,12 @@ function splitPaymentAcrossMonths(student,paidBefore,incomingAmount,refDate){con
   <div class="row"><span>Tarehe ya Kumaliza</span><b>${l.contract_end_date||"Inaendelea"}</b></div>
 
   <h3>4. Kipindi cha Majaribio</h3>
-  <p class="body-text">Mfanyakazi atakuwa kwenye kipindi cha majaribio cha <b>${l.probation_period||"\u2014"}</b> kuanzia tarehe ya kuanza kazi.</p>
+  <p class="body-text">Mfanyakazi atakuwa kwenye kipindi cha majaribio cha <b>${l.probation_period||"\u2014"}</b> kuanzia tarehe ya kuanza kazi. Kipindi na taratibu zake vitazingatia sheria za ajira zinazotumika Tanzania.</p>
 
   <h3>5. Muda wa Kazi</h3>
   <div class="row"><span>Muda wa Mkataba</span><b>${l.contract_duration||"\u2014"}</b></div>
   <div class="row"><span>Masaa ya Kazi</span><b>${l.working_hours||"\u2014"}</b></div>
+  <p class="body-text">Mfanyakazi anatakiwa kufika kazini kwa wakati na kubaki kazini hadi muda uliopangwa, isipokuwa kwa ruhusa iliyoidhinishwa.</p>
 
   <h3>6. Mshahara na Malipo</h3>
   <div class="row"><span>Mshahara wa Msingi</span><b>TZS ${Number(l.basic_salary||0).toLocaleString()}</b></div>
@@ -519,34 +520,121 @@ function splitPaymentAcrossMonths(student,paidBefore,incomingAmount,refDate){con
   <h3>7. Posho</h3>
   <p class="body-text">${Number(l.allowances||0)>0?`Mfanyakazi atalipwa posho ya <b>TZS ${Number(l.allowances).toLocaleString()}</b> kwa mwezi, kwa mujibu wa masharti ya shule.`:"Hakuna posho maalum iliyowekwa kwa nafasi hii kwa sasa."}</p>
 
-  <h3>8. Majukumu ya Mwalimu</h3>
+  <h3>8. Makato</h3>
+  <p class="body-text">Makato kwenye mshahara (kama kodi ya mapato, michango ya kisheria, au makato mengine) yatafanywa tu pale yanaporuhusiwa na sheria za Tanzania au yamekubaliwa kwa maandishi kati ya pande zote mbili.</p>
+
+  <h3>9. Overtime na Kazi za Ziada</h3>
+  <p class="body-text">Endapo Mfanyakazi ataitwa kufanya kazi zaidi ya muda wa kawaida wa kazi, jambo hilo litashughulikiwa kwa mujibu wa sheria za ajira za Tanzania, sera ya shule, na makubaliano yanayohusika kati ya pande zote mbili.</p>
+
+  <h3>10. Majukumu ya Mwalimu</h3>
   <p class="body-text">${(l.responsibilities||"Kama atakavyoelekezwa na Uongozi wa Shule.").replace(/\n/g,"<br/>")}</p>
 
-  <h3>9. Nidhamu</h3>
+  <h3>11. Nidhamu</h3>
   <p class="body-text">Mfanyakazi anatakiwa kuzingatia nidhamu ya kazi, kanuni na taratibu za shule wakati wote. Uvunjifu wa nidhamu utashughulikiwa kwa mujibu wa kanuni za shule na sheria za kazi za Tanzania.</p>
 
-  <h3>10. Likizo</h3>
-  <p class="body-text">Mfanyakazi anastahili likizo ya siku <b>${l.leave_days||"\u2014"}</b> kwa mwaka, kwa mujibu wa sheria za kazi za Tanzania na taratibu za shule.</p>
+  <h3>12. Kuchelewa Kazini</h3>
+  <p class="body-text">Mfanyakazi anatakiwa kuwepo kazini na kuanza kazi kwa wakati uliopangwa (${l.working_hours||"muda uliowekwa"}). Endapo mfanyakazi atachelewa bila taarifa au sababu za msingi zinazokubalika, hatua zifuatazo za kinidhamu zitachukuliwa kwa mpangilio:</p>
+  <ol style="margin:8px 0 8px 20px;padding:0;">
+    <li style="margin-bottom:4px;">Mara ya kwanza na ya pili: Onyo la mdomo kutoka kwa Uongozi wa Shule.</li>
+    <li style="margin-bottom:4px;">Mara ya tatu ndani ya mwezi mmoja: Onyo la maandishi litawekwa kwenye jalada la mfanyakazi.</li>
+    <li style="margin-bottom:4px;">Kuendelea kuchelewa mara kwa mara baada ya maonyo hayo: Kunaweza kupelekea makato ya mshahara kwa saa zilizopotea, au hatua kali zaidi za kinidhamu ikiwemo kusimamishwa au kusitishwa kwa ajira, kwa mujibu wa kanuni za shule na Sheria ya Ajira na Mahusiano Kazini ya Tanzania (2004).</li>
+  </ol>
+  <p class="body-text">Mfanyakazi mwenye sababu ya msingi ya kuchelewa (mfano dharura ya kiafya) anatakiwa kutoa taarifa kwa Uongozi wa Shule haraka iwezekanavyo.</p>
 
-  <h3>11. Ruhusa</h3>
+  <h3>13. Likizo ya Mwaka</h3>
+  <p class="body-text">Mfanyakazi anastahili likizo ya siku <b>${l.leave_days||"\u2014"}</b> kwa mwaka, kwa mujibu wa sheria za kazi za Tanzania na taratibu za shule. Maombi ya likizo yatawasilishwa kwa Uongozi wa Shule mapema.</p>
+
+  <h3>14. Likizo ya Ugonjwa</h3>
+  <p class="body-text">Endapo Mfanyakazi ataumwa, atatoa taarifa mapema iwezekanavyo na kufuata utaratibu wa shule wa taarifa ya ugonjwa (ikiwemo cheti cha daktari pale inapohitajika). Stahili za likizo ya ugonjwa zitaendana na Sheria ya Ajira na Mahusiano Kazini ya Tanzania (2004).</p>
+
+  <h3>15. Likizo ya Uzazi na Likizo ya Baba</h3>
+  <p class="body-text">Mfanyakazi atapata haki za likizo ya uzazi (maternity leave) au likizo ya baba (paternity leave) kwa mujibu wa Sheria ya Ajira na Mahusiano Kazini ya Tanzania (2004) na taratibu nyingine zinazotambulika kisheria.</p>
+
+  <h3>16. Ruhusa</h3>
   <p class="body-text">Mfanyakazi anatakiwa kuomba ruhusa mapema kwa maandishi kwa Uongozi wa Shule kabla ya kutokuwepo kazini, isipokuwa dharura za kiafya au nyingine za lazima ambazo zitatakiwa kutolewa taarifa haraka iwezekanavyo.</p>
 
-  <h3>12. Siri za Shule</h3>
-  <p class="body-text">Mfanyakazi hatatoa au kutumia taarifa za siri za shule, wanafunzi, wafanyakazi wenzake, au uendeshaji wa shule kwa mtu au taasisi yoyote nje ya shule bila idhini ya Uongozi.</p>
+  <h3>17. Sikukuu na Mapumziko</h3>
+  <p class="body-text">Mfanyakazi atafuata kalenda rasmi ya shule na masharti ya sikukuu za kitaifa na mapumziko kwa mujibu wa sheria na taratibu za shule.</p>
 
-  <h3>13. Mali za Shule</h3>
-  <p class="body-text">Mfanyakazi atatunza mali zote za shule alizokabidhiwa kwa ajili ya kazi zake, na atazirudisha kwa hali nzuri endapo ajira itasitishwa au kumalizika.</p>
+  <h3>18. Ulinzi wa Wanafunzi</h3>
+  <p class="body-text">Mfanyakazi ana wajibu wa kuhakikisha usalama na ustawi wa wanafunzi wakati wote. Hairuhusiwi kwa namna yoyote kumdhuru, kumtukana, kumtisha, kumdhalilisha, kumnyanyasa mwanafunzi, au kutumia adhabu isiyoruhusiwa kisheria. Tukio lolote linalohatarisha usalama au ustawi wa mwanafunzi liripotiwe mara moja kwa Uongozi wa Shule.</p>
 
-  <h3>14. Tathmini ya Kazi</h3>
-  <p class="body-text">Utendaji wa mfanyakazi utatathminiwa mara kwa mara na Uongozi wa Shule kulingana na malengo na viwango vya utendaji vilivyowekwa.</p>
+  <h3>19. Mahusiano na Wanafunzi</h3>
+  <p class="body-text">Mfanyakazi anatakiwa kudumisha mipaka inayofaa ya kitaaluma katika mahusiano yake na wanafunzi wakati wote, na hatatumia nafasi yake ya kikazi vibaya dhidi ya mwanafunzi yeyote.</p>
 
-  <h3>15. Kusitisha Ajira</h3>
-  <p class="body-text">Pande zote zitatoa taarifa ya maandishi ya <b>${l.termination_notice||"siku 30"}</b> kabla ya kusitisha ajira, isipokuwa pale sheria inaporuhusu kusitisha mara moja kutokana na kosa kubwa la kinidhamu. Badala ya notisi, mshahara wa kipindi cha notisi unaweza kulipwa. Mfanyakazi atakabidhi mali zote za shule kabla ya kuondoka.</p>
+  <h3>20. Simu, Mitandao ya Kijamii na Teknolojia</h3>
+  <p class="body-text">Hairuhusiwi kupiga picha au video za wanafunzi na kuzisambaza bila idhini inayohitajika, kuchapisha taarifa za siri za shule kwenye mitandao ya kijamii, kutumia mitandao kumdhalilisha mtu yeyote, au kutumia simu kwa namna inayovuruga ufundishaji na kazi za shule.</p>
 
-  <h3>16. Kanuni za Shule</h3>
-  <p class="body-text">Mfanyakazi anakubali kuzingatia na kufuata kanuni, taratibu, na sera zote za Najman Education Centre kama zilivyowekwa na Uongozi, ikiwemo mabadiliko yoyote yatakayofanyika baadaye.</p>
+  <h3>21. Siri za Shule</h3>
+  <p class="body-text">Mfanyakazi hatatoa au kutumia taarifa za siri za shule, wanafunzi, wazazi/walezi, wafanyakazi wenzake, au uendeshaji wa shule kwa mtu au taasisi yoyote nje ya shule bila idhini ya Uongozi. Wajibu huu unaweza kuendelea hata baada ya ajira kumalizika kwa taarifa zinazopaswa kubaki siri.</p>
 
-  <h3>17. Tamko na Saini</h3>
+  <h3>22. Data na Taarifa za Wanafunzi</h3>
+  <p class="body-text">Taarifa za wanafunzi zitatumika kwa madhumuni halali ya shule pekee, na hazitasambazwa au kutumiwa kibinafsi bila idhini halali kutoka kwa Uongozi wa Shule.</p>
+
+  <h3>23. Mali za Shule</h3>
+  <p class="body-text">Mfanyakazi atatunza mali zote za shule alizokabidhiwa kwa ajili ya kazi zake (vitabu, vifaa, nyaraka, funguo n.k.), na atazirudisha kwa hali nzuri endapo ajira itasitishwa au kumalizika.</p>
+
+  <h3>24. Upotevu au Uharibifu wa Mali</h3>
+  <p class="body-text">Mfanyakazi atatoa taarifa mara moja kwa Uongozi wa Shule endapo mali ya shule aliyokabidhiwa itapotea, kuharibika, au kuibiwa. Uwajibikaji wowote utafuata uchunguzi na taratibu za kisheria zinazotumika.</p>
+
+  <h3>25. Migongano ya Maslahi</h3>
+  <p class="body-text">Mfanyakazi atatoa taarifa kwa Uongozi kuhusu maslahi binafsi yoyote yanayoweza kuathiri utekelezaji wa kazi zake, na hatatumia nafasi yake ya kikazi kupata manufaa binafsi yasiyoruhusiwa.</p>
+
+  <h3>26. Zawadi na Malipo Kutoka kwa Wazazi</h3>
+  <p class="body-text">Mfanyakazi hatatakiwa kuomba au kupokea fedha au zawadi kutoka kwa wazazi/walezi kwa namna inayoweza kuathiri uamuzi wake wa kitaaluma kuhusu mwanafunzi. Zawadi au malipo yenye utata yaripotiwe kwa Uongozi wa Shule.</p>
+
+  <h3>27. Kufanya Kazi Nyingine</h3>
+  <p class="body-text">Mfanyakazi hatatakiwa kufanya kazi nyingine yoyote inayopingana na majukumu yake shuleni, kuathiri muda wake wa kazi, au kuleta mgongano wa maslahi, bila taarifa au idhini ya Uongozi wa Shule pale inapohitajika.</p>
+
+  <h3>28. Unyanyasaji na Ubaguzi</h3>
+  <p class="body-text">Shule haitaruhusu aina yoyote ya ubaguzi au unyanyasaji unaokiuka sheria au sera za shule mahali pa kazi. Malalamiko yatashughulikiwa kwa utaratibu unaofaa na kwa usiri unaostahili.</p>
+
+  <h3>29. Afya na Usalama Kazini</h3>
+  <p class="body-text">Mfanyakazi atafuata taratibu za afya na usalama kazini zilizowekwa na shule, na ataripoti mara moja mazingira au matukio yoyote hatarishi kwa Uongozi wa Shule.</p>
+
+  <h3>30. Tathmini ya Kazi</h3>
+  <p class="body-text">Utendaji wa mfanyakazi utatathminiwa mara kwa mara na Uongozi wa Shule kulingana na malengo na viwango vya utendaji vilivyowekwa, ikiwemo ufundishaji, maandalizi, mahudhurio, nidhamu, na ushirikiano na wazazi.</p>
+
+  <h3>31. Mafunzo na Maendeleo ya Kitaaluma</h3>
+  <p class="body-text">Mfanyakazi anaweza kutakiwa kushiriki katika mafunzo, semina, mikutano, au shughuli nyingine za maendeleo ya kitaaluma zinazoidhinishwa na Uongozi wa Shule.</p>
+
+  <h3>32. Makosa Makubwa ya Kinidhamu</h3>
+  <p class="body-text">Mambo yafuatayo, miongoni mwa mengine, yanaweza kuwa msingi wa hatua kali za kinidhamu ikiwemo kusitishwa kwa ajira mara moja, kwa mujibu wa sheria: utoro wa mara kwa mara, wizi au udanganyifu, uharibifu wa makusudi wa mali za shule, kutoa siri za shule bila idhini, unyanyasaji wa mwanafunzi kwa namna yoyote, kughushi nyaraka, ubadhirifu wa fedha za shule, kukataa maelekezo halali ya Uongozi, au tabia yoyote inayohatarisha usalama au uaminifu wa shule.</p>
+
+  <h3>33. Malalamiko ya Mfanyakazi</h3>
+  <p class="body-text">Mfanyakazi ana haki ya kuwasilisha malalamiko kuhusu ajira yake kwa Uongozi wa Shule kwa njia inayofaa na kwa heshima, na malalamiko hayo yatashughulikiwa kwa wakati unaofaa.</p>
+
+  <h3>34. Malalamiko Dhidi ya Mfanyakazi</h3>
+  <p class="body-text">Malalamiko yoyote kuhusu Mfanyakazi yatachunguzwa kwa utaratibu unaofaa, na Mfanyakazi atapewa nafasi ya kujibu kabla ya hatua yoyote ya kinidhamu kuchukuliwa, kwa mujibu wa sheria na taratibu za shule.</p>
+
+  <h3>35. Kusitisha Ajira</h3>
+  <p class="body-text">Pande zote zitatoa taarifa ya maandishi ya <b>${l.termination_notice||"siku 30"}</b> kabla ya kusitisha ajira, isipokuwa pale sheria inaporuhusu kusitisha mara moja kutokana na kosa kubwa la kinidhamu. Mfanyakazi atakabidhi mali zote za shule kabla ya kuondoka.</p>
+
+  <h3>36. Malipo Badala ya Notice</h3>
+  <p class="body-text">Pale ambapo sheria inaruhusu, malipo badala ya kutumikia kipindi cha notisi yanaweza kufanyika kwa mujibu wa Sheria ya Ajira na Mahusiano Kazini ya Tanzania (2004).</p>
+
+  <h3>37. Handover / Makabidhiano</h3>
+  <p class="body-text">Ajira inapomalizika, Mfanyakazi atakabidhi vitabu, nyaraka, records, vifaa vya kufundishia, funguo, vifaa vya kielektroniki, na mali nyingine zote za shule alizokabidhiwa. Makabidhiano hayo yataandikwa na kuthibitishwa na pande zote mbili.</p>
+
+  <h3>38. Haki za Mfanyakazi</h3>
+  <p class="body-text">Mwajiri ataheshimu haki za Mfanyakazi zinazotambuliwa na sheria za ajira za Tanzania kuhusu malipo, mapumziko, likizo, usalama kazini, na utaratibu wa haki nyingine za msingi.</p>
+
+  <h3>39. Wajibu wa Mwajiri</h3>
+  <p class="body-text">Mwajiri atamjulisha Mfanyakazi masharti ya kazi, kulipa mshahara kwa mujibu wa makubaliano, kutoa mazingira na vifaa vinavyofaa kadri inavyowezekana, kushughulikia malalamiko kwa wakati, na kuheshimu haki za Mfanyakazi.</p>
+
+  <h3>40. Kanuni za Shule</h3>
+  <p class="body-text">Mfanyakazi anakubali kuzingatia na kufuata kanuni, taratibu, na sera zote za Najman Education Centre kama zilivyowekwa na Uongozi, ikiwemo sera za child protection, ICT, afya na usalama, mitihani, na mawasiliano, pamoja na mabadiliko yoyote yatakayofanyika baadaye.</p>
+
+  <h3>41. Mabadiliko ya Mkataba</h3>
+  <p class="body-text">Mabadiliko yoyote ya masharti muhimu ya mkataba huu yatafanywa kwa maandishi na kwa makubaliano ya pande zote mbili, kwa mujibu wa sheria zinazotumika.</p>
+
+  <h3>42. Sheria Inayotumika</h3>
+  <p class="body-text">Mkataba huu utazingatia sheria za Jamhuri ya Muungano wa Tanzania zinazohusika na ajira, ikiwemo Sheria ya Ajira na Mahusiano Kazini, 2004 (Employment and Labour Relations Act, 2004), pamoja na kanuni na marekebisho yanayotumika.</p>
+
+  <h3>43. Utatuzi wa Migogoro</h3>
+  <p class="body-text">Pande zote zitajitahidi kutatua mgogoro wowote kupitia mazungumzo na taratibu za ndani za shule. Iwapo hautatatuliwa kwa njia hiyo, hatua nyingine zitachukuliwa kupitia taratibu na mamlaka zinazotambulika kisheria.</p>
+
+  <h3>44. Tamko na Saini</h3>
   <p class="body-text">Kwa kutia saini hapa chini, pande zote mbili zinathibitisha kuwa zimesoma, zimeelewa, na zinakubaliana na masharti yote yaliyoainishwa kwenye mkataba huu.</p>
 
   <div class="sig-block">
