@@ -4,7 +4,7 @@
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="NajmaBoard">
+        android:label="Najman School">
 
         <activity
             android:name=".MainActivity"
@@ -18,7 +18,7 @@
         <service
             android:name=".NajmaBoardService"
             android:exported="true"
-            android:label="NajmaBoard"
+            android:label="Najman School"
             android:permission="android.permission.BIND_INPUT_METHOD">
             <intent-filter>
                 <action android:name="android.view.InputMethod" />

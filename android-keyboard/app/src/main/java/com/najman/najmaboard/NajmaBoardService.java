@@ -22,7 +22,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
-/** NajmaBoard - Najman Education Centre keyboard (letters, numbers, symbols). */
+/** Najman School keyboard (letters A-Z, numbers 0-9, symbols). */
 public class NajmaBoardService extends InputMethodService {
 
     private static final int NAVY = 0xFF0A1222;
@@ -76,7 +76,7 @@ public class NajmaBoardService extends InputMethodService {
                 || var == InputType.TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS
                 || var == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD;
         symbols = false;
-        shift = 0;
+        shift = (noCap || numeric) ? 0 : 2;
         if (root != null) {
             build();
         }
@@ -210,7 +210,7 @@ public class NajmaBoardService extends InputMethodService {
         LinearLayout h = newRow();
         h.setPadding(dp(6), dp(4), dp(6), dp(2));
         TextView brand = new TextView(this);
-        brand.setText("\u2328  NajmaBoard");
+        brand.setText("\u2328  Najman School");
         brand.setTextColor(GOLD);
         brand.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
         brand.setTypeface(Typeface.DEFAULT_BOLD);
@@ -284,7 +284,7 @@ public class NajmaBoardService extends InputMethodService {
     }
 
     private Button spaceKey(float weight) {
-        Button b = makeKey("NajmaBoard", KEY, weight, 46, false, new Runnable() {
+        Button b = makeKey("Najman School", KEY, weight, 46, false, new Runnable() {
             @Override
             public void run() {
                 commit(" ");
@@ -296,30 +296,24 @@ public class NajmaBoardService extends InputMethodService {
     }
 
     private void buildLetters() {
-        addCharRow("1234567890", false, 0);
-        addCharRow("qwertyuiop", true, 0);
-        addCharRow("asdfghjkl", true, 0.5f);
+        addCharRow("0123456789", false, 0);
+        addCharRow("abcdefghij", true, 0);
+        addCharRow("klmnopqrst", true, 0);
 
         LinearLayout r3 = newRow();
-        shiftKey = makeKey("\u21E7", KEY_SPECIAL, 1.5f, 46, false, new Runnable() {
+        shiftKey = makeKey("\u21E7", KEY_SPECIAL, 2f, 46, false, new Runnable() {
             @Override
             public void run() {
-                long now = System.currentTimeMillis();
-                if (now - lastShiftTap < 350) {
-                    shift = 2;
-                } else {
-                    shift = shift > 0 ? 0 : 1;
-                }
-                lastShiftTap = now;
+                shift = shift > 0 ? 0 : 2;
                 refreshShift();
             }
         });
         r3.addView(shiftKey);
-        String z = "zxcvbnm";
+        String z = "uvwxyz";
         for (int i = 0; i < z.length(); i++) {
             r3.addView(charKey(z.charAt(i), true));
         }
-        r3.addView(backspaceKey(1.5f, 46));
+        r3.addView(backspaceKey(2f, 46));
         root.addView(r3);
         refreshShift();
 
@@ -339,17 +333,17 @@ public class NajmaBoardService extends InputMethodService {
     }
 
     private void buildSymbols() {
-        addCharRow("1234567890", false, 0);
+        addCharRow("0123456789", false, 0);
         addCharRow("@#%&*-+()/", false, 0);
         addCharRow("!?:;\"'_=~", false, 0.5f);
 
         LinearLayout r3 = newRow();
         r3.addView(charKey('$', false));
-        String s = "<>[]{}|\\";
+        String s = "<>[]{}\\";
         for (int i = 0; i < s.length(); i++) {
             r3.addView(charKey(s.charAt(i), false));
         }
-        r3.addView(backspaceKey(1.5f, 46));
+        r3.addView(backspaceKey(2f, 46));
         root.addView(r3);
 
         LinearLayout r4 = newRow();
@@ -382,9 +376,9 @@ public class NajmaBoardService extends InputMethodService {
             s3 = '-';
         }
         LinearLayout r0 = newRow();
-        r0.addView(numKey('7'));
-        r0.addView(numKey('8'));
-        r0.addView(numKey('9'));
+        r0.addView(numKey('1'));
+        r0.addView(numKey('2'));
+        r0.addView(numKey('3'));
         r0.addView(backspaceKey(1f, 54));
         root.addView(r0);
 
@@ -396,9 +390,9 @@ public class NajmaBoardService extends InputMethodService {
         root.addView(r1);
 
         LinearLayout r2 = newRow();
-        r2.addView(numKey('1'));
-        r2.addView(numKey('2'));
-        r2.addView(numKey('3'));
+        r2.addView(numKey('7'));
+        r2.addView(numKey('8'));
+        r2.addView(numKey('9'));
         r2.addView(numKey(s2));
         root.addView(r2);
 
@@ -443,21 +437,7 @@ public class NajmaBoardService extends InputMethodService {
     }
 
     private void updateAutoCap() {
-        if (shift == 2 || noCap || numeric || info == null) {
-            return;
-        }
-        if ((info.inputType & InputType.TYPE_MASK_CLASS) != InputType.TYPE_CLASS_TEXT) {
-            return;
-        }
-        InputConnection ic = getCurrentInputConnection();
-        if (ic == null) {
-            return;
-        }
-        int ns = ic.getCursorCapsMode(info.inputType) != 0 ? 1 : 0;
-        if (ns != shift) {
-            shift = ns;
-            refreshShift();
-        }
+        // Capitals are the default; the shift key switches to lowercase.
     }
 
     // ---------------------------------------------------------------- input

@@ -18,7 +18,7 @@ import android.widget.TextView;
 
 import java.util.List;
 
-/** Setup screen: enable and choose NajmaBoard, plus a test field. */
+/** Setup screen: enable and choose Najman School, plus a test field. */
 public class MainActivity extends Activity {
 
     private TextView status;
@@ -65,17 +65,17 @@ public class MainActivity extends Activity {
         l.setPadding(dp(22), dp(36), dp(22), dp(36));
         sv.addView(l);
 
-        l.addView(text("NajmaBoard", 30, 0xFFF5A623, true));
+        l.addView(text("Najman School", 30, 0xFFF5A623, true));
         l.addView(text("Kibodi ya Najman Education Centre: herufi, namba na alama.", 15, 0xFFE2E8F0, false));
-        l.addView(text("Hatua 1: Washa NajmaBoard kwenye orodha ya kibodi, kisha rudi hapa.", 15, 0xFFE2E8F0, false));
-        l.addView(button("1. Washa NajmaBoard", new View.OnClickListener() {
+        l.addView(text("Hatua 1: Washa Najman School kwenye orodha ya kibodi, kisha rudi hapa.", 15, 0xFFE2E8F0, false));
+        l.addView(button("1. Washa Najman School", new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(Settings.ACTION_INPUT_METHOD_SETTINGS));
             }
         }));
-        l.addView(text("Hatua 2: Chagua NajmaBoard kama kibodi ya sasa.", 15, 0xFFE2E8F0, false));
-        l.addView(button("2. Chagua NajmaBoard", new View.OnClickListener() {
+        l.addView(text("Hatua 2: Chagua Najman School kama kibodi ya sasa.", 15, 0xFFE2E8F0, false));
+        l.addView(button("2. Chagua Najman School", new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
@@ -113,7 +113,7 @@ public class MainActivity extends Activity {
         String def = Settings.Secure.getString(getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
         boolean current = def != null && def.startsWith(getPackageName());
         if (current) {
-            status.setText("\u2714 NajmaBoard ndiyo kibodi yako ya sasa.");
+            status.setText("\u2714 Najman School ndiyo kibodi yako ya sasa.");
         } else if (enabled) {
             status.setText("\u2714 Imewashwa. Sasa bonyeza hatua 2 kuichagua.");
         } else {

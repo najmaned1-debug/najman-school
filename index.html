@@ -1140,7 +1140,7 @@ Please share this with them securely.`}),e(""),i("")}catch(D){N(!1),m({type:"err
 
 </script>
 <script>
-/* NajmaBoard - Najman in-app keyboard (letters, numbers, symbols) for touch devices. */
+/* Najman School keyboard - in-app keyboard (letters, numbers, symbols) for touch devices. */
 (function(){
   try{
     if(window.__najmanBoard)return; window.__najmanBoard=true;
@@ -1189,16 +1189,16 @@ Please share this with them securely.`}),e(""),i("")}catch(D){N(!1),m({type:"err
     +'#njb{position:fixed;z-index:2147483001;display:none;min-width:46px;padding:8px 14px;border-radius:10px;background:#f1f5f9;color:#0f172a;font:700 28px Roboto,Arial,sans-serif;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.5);pointer-events:none}';
     document.head.appendChild(st);
     var pad=document.createElement('div'); pad.id='njnp';
-    pad.innerHTML='<div class="nh"><span class="nb">\u2328 Najma<i>Board</i></span><span class="nl" id="njl"></span><span class="nv" id="njv"></span><button class="nd" data-k="Done">\u2714 Done</button></div><div id="njg"></div>';
+    pad.innerHTML='<div class="nh"><span class="nb">\u2328 Najman <i>School</i></span><span class="nl" id="njl"></span><span class="nv" id="njv"></span><button class="nd" data-k="Done">\u2714 Done</button></div><div id="njg"></div>';
     document.body.appendChild(pad);
     var bub=document.createElement('div'); bub.id='njb'; document.body.appendChild(bub);
     var grid=pad.querySelector('#njg');
     var ROWS={
-      abc:[['1','2','3','4','5','6','7','8','9','0'],['q','w','e','r','t','y','u','i','o','p'],[' ','a','s','d','f','g','h','j','k','l',' '],['SH','z','x','c','v','b','n','m','BS'],['SYM',',','SP','.','NEXT']],
-      sym:[['1','2','3','4','5','6','7','8','9','0'],['@','#','%','&','*','-','+','(',')','/'],[' ','!','?',':',';','"',"'",'_','=','~',' '],['$','<','>','[',']','{','}','|','\\','BS'],['ABC',',','SP','.','NEXT']]
+      abc:[['0','1','2','3','4','5','6','7','8','9'],['a','b','c','d','e','f','g','h','i','j'],['k','l','m','n','o','p','q','r','s','t'],['SH','u','v','w','x','y','z','BS'],['SYM',',','SP','.','NEXT']],
+      sym:[['0','1','2','3','4','5','6','7','8','9'],['@','#','%','&','*','-','+','(',')','/'],[' ','!','?',':',';','"',"'",'_','=','~',' '],['$','<','>','[',']','{','}','\\','BS'],['ABC',',','SP','.','NEXT']]
     };
     function label(k){
-      if(k==='BS')return '\u232b'; if(k==='SH')return '\u21e7'; if(k==='SP')return 'Najman'; if(k==='SYM')return '?123'; if(k==='ABC')return 'ABC';
+      if(k==='BS')return '\u232b'; if(k==='SH')return '\u21e7'; if(k==='SP')return 'Najman School'; if(k==='SYM')return '?123'; if(k==='ABC')return 'ABC';
       if(k==='NEXT')return kind==='ta'?'\u21b5':'Next \u27a1';
       if(layer==='abc'&&sh&&/^[a-z]$/.test(k))return k.toUpperCase();
       return k;
@@ -1206,7 +1206,7 @@ Please share this with them securely.`}),e(""),i("")}catch(D){N(!1),m({type:"err
     function build(){
       var h='';
       if(kind==='num'||kind==='tel'){
-        var ks=['7','8','9','BS','4','5','6','C','1','2','3','NEXT','0',kind==='tel'?'+':'00',kind==='tel'?'-':'.','DONE'];
+        var ks=['1','2','3','BS','4','5','6','C','7','8','9','NEXT','0',kind==='tel'?'+':'00',kind==='tel'?'-':'.','DONE'];
         h='<div class="ng np4">';
         ks.forEach(function(k){var c='k',t=k;if(k==='BS'){c+=' rd';t='\u232b'}else if(k==='C'){c+=' rd'}else if(k==='NEXT'){c+=' ac';t='Next \u27a1'}else if(k==='DONE'){c+=' gn';t='\u2714 Done'}h+='<button class="'+c+'" data-k="'+k+'">'+t+'</button>'});
         h+='</div>';
@@ -1217,13 +1217,13 @@ Please share this with them securely.`}),e(""),i("")}catch(D){N(!1),m({type:"err
           r.forEach(function(k){
             if(k===' '){h+='<span class="k sp"></span>';return}
             var c='k',w='';
-            if(k==='SH'){c+=' w3'+(sh?' sl':'')+(sh===2?' on':'')}
-            else if(k==='BS'){c+=' w3 rd'}
+            if(k==='SH'){c+=' w4'+(sh?' sl':'')+(sh===2?' on':'')}
+            else if(k==='BS'){c+=' w4 rd'}
             else if(k==='SYM'||k==='ABC'){c+=' w4'}
             else if(k==='SP'){c+=' w8'}
             else if(k==='NEXT'){c+=' w4 ac'}
             var t=label(k);
-            if(k==='SP')t='NajmaBoard';
+            if(k==='SP')t='Najman School';
             h+='<button class="'+c+'" data-k="'+(k==='"'?'&quot;':k)+'">'+(t==='<'?'&lt;':t==='>'?'&gt;':t==='&'?'&amp;':t)+'</button>';
           });
         });
@@ -1231,7 +1231,7 @@ Please share this with them securely.`}),e(""),i("")}catch(D){N(!1),m({type:"err
       }
       grid.innerHTML=h;
     }
-    function autoCap(){
+    function autoCap(){return;
       if(kind!=='ta'&&!(kind==='txt'&&cur&&(cur.type||'text')==='text'))return;
       if(sh===2)return;
       var v=cur.value||'',p;try{p=cur.selectionStart}catch(e){}if(p==null)p=v.length;
@@ -1278,7 +1278,7 @@ Please share this with them securely.`}),e(""),i("")}catch(D){N(!1),m({type:"err
         return;
       }
       if(k==='BS'){back();return}
-      if(k==='SH'){var n=Date.now();if(n-lastShift<350)sh=2;else sh=sh?0:1;lastShift=n;build();return}
+      if(k==='SH'){sh=sh?0:2;build();return}
       if(k==='SYM'){layer='sym';build();return}
       if(k==='ABC'){layer='abc';build();return}
       if(k==='SP'){insert(' ');return}
@@ -1307,9 +1307,10 @@ Please share this with them securely.`}),e(""),i("")}catch(D){N(!1),m({type:"err
     }
     function show(el){
       cur=el;kind=kindOf(el)||'txt';buf=el.value||'';
-      if(kind!=='num'&&kind!=='tel'){if(layer!=='abc'&&layer!=='sym')layer='abc'}
-      if(kind==='email'||(kind==='txt'&&(el.type==='email'||el.type==='url'||el.type==='password'||el.type==='search')))sh=0;
-      build();autoCap();
+      layer='abc';
+      var ty=(el.type||'text').toLowerCase();
+      sh=(kind==='num'||kind==='tel'||ty==='email'||ty==='url'||ty==='password')?0:2;
+      build();
       pad.style.display='block';place();
       document.getElementById('njl').textContent=lab(el);
       document.getElementById('njv').textContent=kind==='num'?buf:'';
@@ -1357,7 +1358,7 @@ Please share this with them securely.`}),e(""),i("")}catch(D){N(!1),m({type:"err
     ['pointerup','pointercancel','pointerleave'].forEach(function(n){pad.addEventListener(n,stopRep)});
     pad.addEventListener('mousedown',function(e){e.preventDefault()});
     pad.addEventListener('click',function(e){e.preventDefault()});
-  }catch(err){console.warn('NajmaBoard init failed',err)}
+  }catch(err){console.warn('Najman keyboard init failed',err)}
 })();
 
 </script>

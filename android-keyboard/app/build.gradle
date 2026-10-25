@@ -10,13 +10,26 @@ android {
         applicationId 'com.najman.najmaboard'
         minSdk 24
         targetSdk 34
-        versionCode 1
-        versionName '1.0'
+        versionCode 2
+        versionName '1.1'
+    }
+
+    signingConfigs {
+        najman {
+            storeFile file('../najmanschool.jks')
+            storePassword 'najman2026'
+            keyAlias 'najman'
+            keyPassword 'najman2026'
+        }
     }
 
     buildTypes {
+        debug {
+            signingConfig signingConfigs.najman
+        }
         release {
             minifyEnabled false
+            signingConfig signingConfigs.najman
         }
     }
 

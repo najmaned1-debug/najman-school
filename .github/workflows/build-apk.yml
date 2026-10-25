@@ -1,4 +1,4 @@
-name: Build NajmaBoard APK
+name: Build Najman School keyboard APK
 
 on:
   push:
@@ -30,16 +30,17 @@ jobs:
         run: gradle --no-daemon assembleDebug
 
       - name: Collect APK
-        run: cp android-keyboard/app/build/outputs/apk/debug/app-debug.apk NajmaBoard.apk
+        run: cp android-keyboard/app/build/outputs/apk/debug/app-debug.apk NajmanSchool.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: NajmaBoard-apk
-          path: NajmaBoard.apk
+          name: NajmanSchool-apk
+          path: NajmanSchool.apk
 
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete najmaboard --yes --cleanup-tag || true
-          gh release create najmaboard NajmaBoard.apk --title "NajmaBoard keyboard (APK)" --notes "Pakua NajmaBoard.apk na uisakinishe kwenye simu ya Android."
+          gh release delete najmanschool --yes --cleanup-tag || true
+          gh release create najmanschool NajmanSchool.apk --title "Najman School keyboard (APK)" --notes "Pakua NajmanSchool.apk na uisakinishe kwenye simu ya Android."
