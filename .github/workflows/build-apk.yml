@@ -1,0 +1,45 @@
+name: Build NajmaBoard APK
+
+on:
+  push:
+    paths:
+      - 'android-keyboard/**'
+      - '.github/workflows/build-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Build debug APK
+        working-directory: android-keyboard
+        run: gradle --no-daemon assembleDebug
+
+      - name: Collect APK
+        run: cp android-keyboard/app/build/outputs/apk/debug/app-debug.apk NajmaBoard.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NajmaBoard-apk
+          path: NajmaBoard.apk
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete najmaboard --yes --cleanup-tag || true
+          gh release create najmaboard NajmaBoard.apk --title "NajmaBoard keyboard (APK)" --notes "Pakua NajmaBoard.apk na uisakinishe kwenye simu ya Android."
