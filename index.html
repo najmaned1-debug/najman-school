@@ -1144,7 +1144,7 @@ Please share this with them securely.`}),e(""),i("")}catch(D){N(!1),m({type:"err
 (function(){
   try{
     if(window.__najmanNumpad)return; window.__najmanNumpad=true;
-    var coarse=window.matchMedia&&window.matchMedia('(pointer:coarse)').matches;
+    var coarse=(window.matchMedia&&window.matchMedia('(pointer:coarse), (any-pointer:coarse)').matches)||(navigator.maxTouchPoints>0)||('ontouchstart' in window);
     if(!coarse)return;
     var off=false; try{off=localStorage.getItem('najman_numpad_off')==='1'}catch(e){}
     var cur=null, buf='';
@@ -1174,7 +1174,9 @@ Please share this with them securely.`}),e(""),i("")}catch(D){N(!1),m({type:"err
     new MutationObserver(function(ms){ if(off)return; ms.forEach(function(m){m.addedNodes.forEach(function(n){ if(n.nodeType!==1)return; if(n.tagName==='INPUT'&&n.type==='number')n.setAttribute('inputmode','none'); else suppress(n)})})}).observe(document.body,{childList:true,subtree:true});
     suppress(document);
     function label(el){var l=el.getAttribute('placeholder')||el.getAttribute('title')||''; var tr=el.closest&&el.closest('tr'); if(tr&&tr.firstElementChild){var t=(tr.firstElementChild.textContent||'').replace(/^\d+\.\s*/,'').trim(); if(t)return t.slice(0,28)} return l.slice(0,28)||'Weka namba'}
-    function show(el){cur=el;buf=el.value||'';pad.style.display='block';document.getElementById('njl').textContent=label(el);document.getElementById('njv').textContent=buf;document.body.style.paddingBottom=(pad.offsetHeight+10)+'px';setTimeout(function(){try{el.scrollIntoView({block:'center',behavior:'smooth'})}catch(e){}},60)}
+    function show(el){cur=el;buf=el.value||'';pad.style.display='block';place();document.getElementById('njl').textContent=label(el);document.getElementById('njv').textContent=buf;document.body.style.paddingBottom=(pad.offsetHeight+10)+'px';setTimeout(function(){try{el.scrollIntoView({block:'center',behavior:'smooth'})}catch(e){}},60)}
+    function place(){ var vv=window.visualViewport; if(!vv){pad.style.bottom='0px';return} var b=Math.max(0,window.innerHeight-vv.height-vv.offsetTop); pad.style.bottom=b+'px' }
+    if(window.visualViewport){window.visualViewport.addEventListener('resize',place);window.visualViewport.addEventListener('scroll',place)}
     function hide(){unlock(cur);pad.style.display='none';document.body.style.paddingBottom='';cur=null}
     function setVal(v){ if(!cur)return; buf=v; document.getElementById('njv').textContent=v; var w=v.slice(-1)==='.'?v.slice(0,-1):v; if(w===''||!isNaN(Number(w))){setter.call(cur,w);cur.dispatchEvent(new Event('input',{bubbles:true}))} }
     function next(){ if(!cur)return; var all=Array.prototype.slice.call(document.querySelectorAll('input[type=number]')).filter(function(i){return isNum(i)&&i.offsetParent!==null}); var i=all.indexOf(cur); var n=all[i+1]; if(n){n.focus();show(n)}else{cur.blur();hide()} }
