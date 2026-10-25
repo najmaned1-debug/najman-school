@@ -210,14 +210,14 @@ public class NajmaBoardService extends InputMethodService {
         LinearLayout h = newRow();
         h.setPadding(dp(6), dp(4), dp(6), dp(2));
         TextView brand = new TextView(this);
-        brand.setText("⌨  NajmaBoard");
+        brand.setText("\u2328  NajmaBoard");
         brand.setTextColor(GOLD);
         brand.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
         brand.setTypeface(Typeface.DEFAULT_BOLD);
         brand.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         h.addView(brand);
         TextView hide = new TextView(this);
-        hide.setText("⌵  Funga");
+        hide.setText("Funga  \u25BE");
         hide.setTextColor(0xFFCBD5E1);
         hide.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
         hide.setPadding(dp(12), dp(4), dp(6), dp(4));
@@ -266,7 +266,7 @@ public class NajmaBoardService extends InputMethodService {
     }
 
     private Button backspaceKey(float weight, int h) {
-        return makeKey("⌫", RED, weight, h, true, new Runnable() {
+        return makeKey("\u232B", RED, weight, h, true, new Runnable() {
             @Override
             public void run() {
                 backspace();
@@ -301,7 +301,7 @@ public class NajmaBoardService extends InputMethodService {
         addCharRow("asdfghjkl", true, 0.5f);
 
         LinearLayout r3 = newRow();
-        shiftKey = makeKey("⇧", KEY_SPECIAL, 1.5f, 46, false, new Runnable() {
+        shiftKey = makeKey("\u21E7", KEY_SPECIAL, 1.5f, 46, false, new Runnable() {
             @Override
             public void run() {
                 long now = System.currentTimeMillis();
@@ -502,11 +502,11 @@ public class NajmaBoardService extends InputMethodService {
 
     private String enterLabel() {
         if (info == null) {
-            return "↵";
+            return "\u21B5";
         }
         boolean multi = (info.inputType & InputType.TYPE_TEXT_FLAG_MULTI_LINE) != 0;
         if ((info.imeOptions & EditorInfo.IME_FLAG_NO_ENTER_ACTION) != 0 || multi) {
-            return "↵";
+            return "\u21B5";
         }
         switch (info.imeOptions & EditorInfo.IME_MASK_ACTION) {
             case EditorInfo.IME_ACTION_GO:
@@ -520,7 +520,7 @@ public class NajmaBoardService extends InputMethodService {
             case EditorInfo.IME_ACTION_DONE:
                 return "Done";
             default:
-                return "↵";
+                return "\u21B5";
         }
     }
 

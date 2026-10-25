@@ -113,9 +113,9 @@ public class MainActivity extends Activity {
         String def = Settings.Secure.getString(getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
         boolean current = def != null && def.startsWith(getPackageName());
         if (current) {
-            status.setText("✔ NajmaBoard ndiyo kibodi yako ya sasa.");
+            status.setText("\u2714 NajmaBoard ndiyo kibodi yako ya sasa.");
         } else if (enabled) {
-            status.setText("✔ Imewashwa. Sasa bonyeza hatua 2 kuichagua.");
+            status.setText("\u2714 Imewashwa. Sasa bonyeza hatua 2 kuichagua.");
         } else {
             status.setText("Bado haijawashwa. Bonyeza hatua 1.");
         }
