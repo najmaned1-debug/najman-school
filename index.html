@@ -809,7 +809,7 @@ const exam=exs.find(x=>String(x.id)===String(examId))||null;
 const gradeOf=n=>n>=80?"A":n>=70?"B":n>=60?"C":n>=50?"D":"F";
 const classNames=[...new Set(stus.map(s=>s.class_name).filter(Boolean))].sort();
 const list=stus.filter(s=>s.class_name===cn).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
-const seen={};const cs=subs.filter(s=>s.class_name===cn).filter(s=>{const k=(s.name||"").toLowerCase();if(seen[k])return!1;seen[k]=1;return!0});
+const seen={};const cs=subs.filter(s=>s.class_name===cn).filter(s=>{const k=(s.name||"").toLowerCase();if(seen[k])return!1;seen[k]=1;return!0});cs.sort((a,b)=>(/business/i.test(a.name||"")?1:0)-(/business/i.test(b.name||"")?1:0));
 useEffect(()=>{const o={};if(exam){res.filter(r=>String(r.exam_id)===String(exam.id)).forEach(r=>{o[r.student_id+"|"+r.subject_id]=String(r.marks_obtained)})}setGrid(o),setMsg("")},[examId,cn,res]);
 const pick=v=>{setExamId(v);const ex=exs.find(x=>String(x.id)===String(v));ex&&ex.class_name&&ex.class_name!=="All"&&setCn(ex.class_name)};
 const stats=s=>{const vals=cs.map(c=>grid[s.id+"|"+c.id]).filter(v=>v!==undefined&&v!=="").map(Number).filter(n=>!isNaN(n));const total=vals.reduce((a,b)=>a+b,0),avg=vals.length?Math.round(total/vals.length):null,pts=vals.map(n=>GRADE_POINTS[gradeOf(n)]).sort((a,b)=>a-b).slice(0,7).reduce((a,b)=>a+b,0);return{n:vals.length,total,avg,div:isFormClass(cn)&&vals.length>=7?divisionFromPoints(pts):null}};
