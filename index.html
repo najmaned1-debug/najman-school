@@ -223,6 +223,7 @@ window.__APP_VERSION = "2026-09-15-052";
 }
 </style>
 
+<style>input.input.njmark{background:#2b4170;color:#fff;border:2px solid #7aa2f7;border-radius:10px;opacity:1}input.input.njmark::placeholder{color:#a9bddf;opacity:1}input.input.njmark:focus{background:#35548a;border-color:#f5a623;box-shadow:0 0 0 3px rgba(245,166,35,.4);outline:none}</style>
 </head>
 <body>
 <button class="hamburger" id="menuBtn">☰</button>
@@ -830,7 +831,7 @@ React.createElement("table",{className:"table"},
 React.createElement("thead",null,React.createElement("tr",null,[React.createElement("th",{key:"n",style:{position:"sticky",left:0,background:"var(--card-bg)",zIndex:1}},"Student"),...cs.map(c=>React.createElement("th",{key:c.id,style:{textAlign:"center",minWidth:70}},c.name)),React.createElement("th",{key:"t",style:{textAlign:"center"}},"Total"),React.createElement("th",{key:"a",style:{textAlign:"center"}},"Avg"),isFormClass(cn)&&React.createElement("th",{key:"d",style:{textAlign:"center"}},"Division")].filter(Boolean))),
 React.createElement("tbody",null,list.map((s,i)=>{const st=stats(s);return React.createElement("tr",{key:s.id},
 React.createElement("td",{style:{fontWeight:700,whiteSpace:"nowrap",position:"sticky",left:0,background:"var(--card-bg)",zIndex:1}},(i+1)+". "+s.name),
-cs.map(c=>{const k=s.id+"|"+c.id,v=grid[k]===undefined?"":grid[k],n=Number(v),over=v!==""&&(isNaN(n)||n<0||n>Number(exam.total_marks||100));return React.createElement("td",{key:c.id,style:{textAlign:"center"}},React.createElement("input",{type:"number",inputMode:"decimal",min:0,max:Number(exam.total_marks||100),className:"input",style:{width:64,padding:"5px 6px",textAlign:"center",borderColor:over?C.red:undefined},value:v,onChange:e=>{const nv=e.target.value;setGrid(g=>({...g,[k]:nv}))}}))}),
+cs.map(c=>{const k=s.id+"|"+c.id,v=grid[k]===undefined?"":grid[k],n=Number(v),over=v!==""&&(isNaN(n)||n<0||n>Number(exam.total_marks||100));return React.createElement("td",{key:c.id,style:{textAlign:"center"}},React.createElement("input",{type:"number",inputMode:"decimal",min:0,max:Number(exam.total_marks||100),className:"input njmark",placeholder:"\u2014",style:{width:74,height:42,padding:"4px 6px",textAlign:"center",fontSize:17,fontWeight:800,border:over?"2px solid #ef4444":undefined},value:v,onChange:e=>{const nv=e.target.value;setGrid(g=>({...g,[k]:nv}))}}))}),
 React.createElement("td",{style:{textAlign:"center",fontWeight:900}},st.n?st.total:"—"),
 React.createElement("td",{style:{textAlign:"center",fontWeight:900}},st.avg===null?"—":st.avg),
 isFormClass(cn)&&React.createElement("td",{style:{textAlign:"center",fontWeight:900,color:C.accent}},st.div||"—"))})))),
