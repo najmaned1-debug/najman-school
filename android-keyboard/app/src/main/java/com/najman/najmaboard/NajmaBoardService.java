@@ -138,7 +138,7 @@ public class NajmaBoardService extends InputMethodService {
         b.setText(label);
         b.setAllCaps(false);
         b.setTextColor(color == GOLD ? 0xFF111111 : TEXT);
-        b.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+        b.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
         b.setTypeface(Typeface.DEFAULT_BOLD);
         b.setPadding(0, 0, 0, 0);
         b.setMinHeight(0);
@@ -246,7 +246,7 @@ public class NajmaBoardService extends InputMethodService {
     }
 
     private Button charKey(final char c, final boolean letter) {
-        Button b = makeKey(String.valueOf(c), KEY, 1f, 46, false, new Runnable() {
+        Button b = makeKey(String.valueOf(c), KEY, 1f, 38, false, new Runnable() {
             @Override
             public void run() {
                 if (letter) {
@@ -284,7 +284,7 @@ public class NajmaBoardService extends InputMethodService {
     }
 
     private Button spaceKey(float weight) {
-        Button b = makeKey("Najman School", KEY, weight, 46, false, new Runnable() {
+        Button b = makeKey("Najman School", KEY, weight, 38, false, new Runnable() {
             @Override
             public void run() {
                 commit(" ");
@@ -301,7 +301,7 @@ public class NajmaBoardService extends InputMethodService {
         addCharRow("asdfghjkl", true, 0);
 
         LinearLayout r3 = newRow();
-        shiftKey = makeKey("\u21E7", KEY_SPECIAL, 2f, 46, false, new Runnable() {
+        shiftKey = makeKey("\u21E7", KEY_SPECIAL, 2f, 38, false, new Runnable() {
             @Override
             public void run() {
                 shift = shift > 0 ? 0 : 2;
@@ -313,12 +313,12 @@ public class NajmaBoardService extends InputMethodService {
         for (int i = 0; i < z.length(); i++) {
             r3.addView(charKey(z.charAt(i), true));
         }
-        r3.addView(backspaceKey(2f, 46));
+        r3.addView(backspaceKey(2f, 38));
         root.addView(r3);
         refreshShift();
 
         LinearLayout r4 = newRow();
-        r4.addView(makeKey("?123", KEY_SPECIAL, 2f, 46, false, new Runnable() {
+        r4.addView(makeKey("?123", KEY_SPECIAL, 2f, 38, false, new Runnable() {
             @Override
             public void run() {
                 symbols = true;
@@ -328,7 +328,7 @@ public class NajmaBoardService extends InputMethodService {
         r4.addView(charKey(',', false));
         r4.addView(spaceKey(4f));
         r4.addView(charKey('.', false));
-        r4.addView(enterKey(2f, 46));
+        r4.addView(enterKey(2f, 38));
         root.addView(r4);
     }
 
@@ -343,11 +343,11 @@ public class NajmaBoardService extends InputMethodService {
         for (int i = 0; i < s.length(); i++) {
             r3.addView(charKey(s.charAt(i), false));
         }
-        r3.addView(backspaceKey(2f, 46));
+        r3.addView(backspaceKey(2f, 38));
         root.addView(r3);
 
         LinearLayout r4 = newRow();
-        r4.addView(makeKey("ABC", KEY_SPECIAL, 2f, 46, false, new Runnable() {
+        r4.addView(makeKey("ABC", KEY_SPECIAL, 2f, 38, false, new Runnable() {
             @Override
             public void run() {
                 symbols = false;
@@ -357,7 +357,7 @@ public class NajmaBoardService extends InputMethodService {
         r4.addView(charKey(',', false));
         r4.addView(spaceKey(4f));
         r4.addView(charKey('.', false));
-        r4.addView(enterKey(2f, 46));
+        r4.addView(enterKey(2f, 38));
         root.addView(r4);
     }
 
@@ -398,7 +398,7 @@ public class NajmaBoardService extends InputMethodService {
 
         LinearLayout r3 = newRow();
         r3.addView(numKey('0'));
-        r3.addView(makeKey("00", KEY, 1f, 54, false, new Runnable() {
+        r3.addView(makeKey("00", KEY, 1f, 44, false, new Runnable() {
             @Override
             public void run() {
                 commit("00");
@@ -411,7 +411,7 @@ public class NajmaBoardService extends InputMethodService {
     }
 
     private Button numKey(final char c) {
-        return makeKey(String.valueOf(c), KEY, 1f, 54, false, new Runnable() {
+        return makeKey(String.valueOf(c), KEY, 1f, 44, false, new Runnable() {
             @Override
             public void run() {
                 commit(String.valueOf(c));
