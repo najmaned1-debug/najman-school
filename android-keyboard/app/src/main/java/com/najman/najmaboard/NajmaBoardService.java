@@ -296,9 +296,9 @@ public class NajmaBoardService extends InputMethodService {
     }
 
     private void buildLetters() {
-        addCharRow("0123456789", false, 0);
-        addCharRow("abcdefghij", true, 0);
-        addCharRow("klmnopqrst", true, 0);
+        addCharRow("1234567890", false, 0);
+        addCharRow("qwertyuiop", true, 0);
+        addCharRow("asdfghjkl", true, 0);
 
         LinearLayout r3 = newRow();
         shiftKey = makeKey("\u21E7", KEY_SPECIAL, 2f, 46, false, new Runnable() {
@@ -309,7 +309,7 @@ public class NajmaBoardService extends InputMethodService {
             }
         });
         r3.addView(shiftKey);
-        String z = "uvwxyz";
+        String z = "zxcvbnm";
         for (int i = 0; i < z.length(); i++) {
             r3.addView(charKey(z.charAt(i), true));
         }
