@@ -1316,13 +1316,25 @@ Please share this with them securely.`}),e(""),i("")}catch(D){N(!1),m({type:"err
       var ty=(el.type||'text').toLowerCase();
       sh=(kind==='num'||kind==='tel'||ty==='email'||ty==='url'||ty==='password')?0:2;
       build();
+      if(!kbH){kbH=true;try{history.pushState({njkb:1},'')}catch(e){kbH=false}}
       pad.style.display='block';place();
       document.getElementById('njl').textContent=lab(el);
       document.getElementById('njv').textContent=kind==='num'?buf:'';
       document.body.style.paddingBottom=(pad.offsetHeight+12)+'px';
       reveal(el);
     }
-    function hide(){unlock(cur);pad.style.display='none';document.body.style.paddingBottom='';cur=null}
+    var kbH=false,ign=false,lastBack=0;
+    function hide(){unlock(cur);pad.style.display='none';document.body.style.paddingBottom='';cur=null;if(kbH){kbH=false;ign=true;try{history.back()}catch(e){ign=false}}}
+    try{history.replaceState({njbase:1},'');history.pushState({njguard:1},'')}catch(e){}
+    var tst=document.createElement('div');tst.style.cssText='position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 16px;border-radius:20px;font:600 14px sans-serif;z-index:2147483647;display:none;max-width:90%;text-align:center';tst.textContent='Bonyeza Back tena kutoka kwenye app';document.body.appendChild(tst);
+    window.addEventListener('popstate',function(){
+      if(ign){ign=false;return}
+      if(kbH){kbH=false;var c=cur;if(c)try{c.blur()}catch(e){}unlock(c);pad.style.display='none';document.body.style.paddingBottom='';cur=null;return}
+      var now=Date.now();
+      if(now-lastBack<2500){try{history.back()}catch(e){}return}
+      lastBack=now;try{history.pushState({njguard:1},'')}catch(e){}
+      tst.style.display='block';setTimeout(function(){tst.style.display='none'},2200);
+    });
     function next(){
       var all=Array.prototype.slice.call(document.querySelectorAll('input,textarea')).filter(function(i){return kindOf(i)&&i.offsetParent!==null});
       var i=all.indexOf(cur),n=all[i+1];
