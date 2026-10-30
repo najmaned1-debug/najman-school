@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="sw"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Najman USSD - Kiigaji</title>
+<style>
+:root{--bg:#0b1220;--card:#131c31;--fg:#e8edf5;--mut:#8aa0c0;--acc:#f5a623;--ok:#16a34a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px system-ui,sans-serif;padding:16px;max-width:460px;margin:auto}
+h1{font-size:18px;color:var(--acc);margin:4px 0 12px}label{font-size:12px;color:var(--mut);display:block;margin:10px 0 4px}
+input{width:100%;padding:12px;border-radius:10px;border:1px solid #24324f;background:#0e1628;color:var(--fg);font-size:16px}
+button{padding:12px 16px;border:0;border-radius:10px;background:var(--acc);color:#111;font-weight:800;font-size:16px}
+button.g{background:#24324f;color:var(--fg)}
+.screen{background:#000;border:2px solid #24324f;border-radius:14px;padding:14px;margin:14px 0;min-height:170px;white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:15px;line-height:1.45}
+.row{display:flex;gap:8px}.row>*{flex:1}.note{font-size:12px;color:var(--mut);margin-top:8px}
+</style></head><body>
+<h1>📞 Najman USSD - Kiigaji</h1>
+<label>Anwani ya function (URL)</label><input id="u" placeholder="https://yubucetzjjjhcrpnnoal.supabase.co/functions/v1/ussd">
+<label>Ufunguo wa siri (key)</label><input id="k" type="password" placeholder="USSD_KEY uliyoweka">
+<label>Namba ya mzazi (iliyosajiliwa kwa mwanafunzi)</label><input id="p" inputmode="tel" placeholder="0742XXXXXX">
+<div class="row" style="margin-top:12px"><button id="go">Piga USSD</button><button class="g" id="rs">Anza upya</button></div>
+<div class="screen" id="s">Bonyeza "Piga USSD" kuanza.</div>
+<div class="row"><input id="a" inputmode="numeric" placeholder="Jibu (1, 2, 0...)"><button id="send" class="g">Tuma</button></div>
+<div class="note">Kiigaji hiki kinaita function halisi, kwa hiyo kinaonyesha data halisi ya mwanafunzi. Kitumie wewe tu.</div>
+<script>
+var path=[],$=function(i){return document.getElementById(i)};
+try{['u','k','p'].forEach(function(i){var v=localStorage.getItem('ussd_'+i);if(v)$(i).value=v})}catch(e){}
+function save(){try{['u','k','p'].forEach(function(i){localStorage.setItem('ussd_'+i,$(i).value)})}catch(e){}}
+async function call(){
+  save();var u=$('u').value.trim(),k=$('k').value.trim(),p=$('p').value.trim();
+  if(!u||!k||!p){$('s').textContent='Jaza URL, key na namba kwanza.';return}
+  $('s').textContent='...';
+  try{
+    var body=new URLSearchParams({sessionId:'sim-'+Date.now(),phoneNumber:p,text:path.join('*')});
+    var r=await fetch(u+(u.indexOf('?')>-1?'&':'?')+'key='+encodeURIComponent(k),{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body});
+    var t=await r.text();
+    if(!r.ok){$('s').textContent='Kosa '+r.status+': '+t;return}
+    var end=t.indexOf('END')===0;$('s').textContent=t.replace(/^(CON|END) /,'')+(end?'\n\n[Kikao kimeisha]':'');
+    if(end)path=[];
+  }catch(e){$('s').textContent='Imeshindwa kuunganisha: '+e.message}
+}
+$('go').onclick=function(){path=[];call()};
+$('rs').onclick=function(){path=[];$('s').textContent='Imeanza upya.'};
+$('send').onclick=function(){var v=$('a').value.trim();if(!v)return;path.push(v);$('a').value='';call()};
+$('a').addEventListener('keydown',function(e){if(e.key==='Enter')$('send').click()});
+</script></body></html>
