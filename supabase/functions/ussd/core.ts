@@ -40,7 +40,7 @@ export function expectedFee(st, hist, now = new Date()) {
   }
   const list = (hist || []).slice().sort((a, b) => new Date(a.effective_from) - new Date(b.effective_from));
   let total = 0, cur = new Date(start.getFullYear(), start.getMonth(), 1);
-  const endM = new Date(ref.getFullYear(), ref.getMonth(), 1);
+  const endM = new Date(ref.getFullYear(), ref.getMonth() - (ref.getDate() < 15 ? 1 : 0), 1); // debt for a month starts on the 15th
   let g = 0;
   while (cur <= endM && g < 240) {
     const monthEnd = new Date(cur.getFullYear(), cur.getMonth() + 1, 0, 23, 59, 59);
